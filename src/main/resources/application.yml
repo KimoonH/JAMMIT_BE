@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: JAMMIT_BE
+  lifecycle:
+    timeout-per-shutdown-phase: 120
+
+  datasource:
+    url: ENC(1KQa0Ks9zo7H6t0wbRWaL/3Tm2YNrULWj+Eqeh7p5y8Ex7SW2+aDXKSoEt5QKm0B6JdQd3Gq00nitkkHRg6UbEl2nFytmEFOgcITwh+eKhuXeVYF/fsGAGhUS4sGbvhaG818pzxxU48=)
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ENC(nt7qS4UJ8rJHy/vl+da+WT77wyJCBVV1)
+    password: ENC(sHkQj7hh8U0z5fQPO11ZUVyCp2K0Vp3g)
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+logging:
+  level:
+    org.hibernate.orm.jdbc.bind: trace    # Hibernate 바인딩 정보
+    org.hibernate.stat: off               # Hibernate 통계 정보
+    org.springframework.transaction: off  # 트랜잭션 디버깅
+
+jwt:
+  expiredAccessTokenMs: 86400000
+  expiredRefreshTokenMs: 86400000
+  secretKey: ENC(lh1kMo8tAKIdFO/qo3/D3uZY45ZGJ5W+OFTFjY8in/9LJR+Qs0QyV0S6FL1zFFznYPmoCLZcx2U=)
+
+## Jasypt
+jasypt:
+  encryptor:
+    key: ${jasypt_key}
+
+server:
+  shutdown: graceful
+  port: 8083
