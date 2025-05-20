@@ -1,8 +1,12 @@
 package com.jammit_be.user.entity;
 
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gatheringparticipant.entity.GatheringParticipant;
+import com.jammit_be.review.entity.Review;
 import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
+import com.jammit_be.userbandsession.entity.UserBandSession;
+import com.jammit_be.usergenre.entity.UserGenre;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -15,6 +19,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Setter
@@ -34,15 +40,32 @@ public class User {
     private String password;
     @Column(nullable = false, length = 30)
     private String username;
+    @Column(nullable = false, length = 30)
+    private String nickname; // 닉네임
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
     @Enumerated(EnumType.STRING)
     private OauthPlatform oauthPlatform;
-
     private String orgFileName;
     private String profileImagePath;
+
+    // 내가 참가한 모임들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<GatheringParticipant> participants = new ArrayList<>();
+
+    // 내가 선택한 곡장르들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private final List<UserGenre> userGenres = new ArrayList<>();
+
+    // 내가 선택한 밴드 세션들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserBandSession> userBandSessions = new ArrayList<>();
+
+    // 내가 작성한 리뷰들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Review> reviews = new ArrayList<>();
 
     @Builder
     public User(String email, String password, String username, OauthPlatform oauthPlatform) {
