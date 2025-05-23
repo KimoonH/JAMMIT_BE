@@ -1,12 +1,10 @@
 package com.jammit_be.user.entity;
 
 import com.jammit_be.common.exception.AlertException;
-import com.jammit_be.gatheringparticipant.entity.GatheringParticipant;
+import com.jammit_be.gathering.entity.GatheringParticipant;
 import com.jammit_be.review.entity.Review;
 import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
-import com.jammit_be.userbandsession.entity.UserBandSession;
-import com.jammit_be.usergenre.entity.UserGenre;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -57,15 +55,19 @@ public class User {
 
     // 내가 선택한 곡장르들
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private final List<UserGenre> userGenres = new ArrayList<>();
+    private final List<PreferredGenre> preferredGenres = new ArrayList<>();
 
     // 내가 선택한 밴드 세션들
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<UserBandSession> userBandSessions = new ArrayList<>();
+    private List<PreferredBandSession> userBandSessions = new ArrayList<>();
 
     // 내가 작성한 리뷰들
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Review> reviews = new ArrayList<>();
+    @OneToMany(mappedBy = "reviewer")
+    private List<Review> writtenReviews = new ArrayList<>();
+
+    // 내가 받은 리뷰들
+    @OneToMany(mappedBy = "reviewee")
+    private List<Review> receivedReviews = new ArrayList<>();
 
     @Builder
     public User(String email, String password, String username, OauthPlatform oauthPlatform) {
