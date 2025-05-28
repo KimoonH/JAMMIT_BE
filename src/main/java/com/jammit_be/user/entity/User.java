@@ -70,10 +70,11 @@ public class User {
     private List<Review> receivedReviews = new ArrayList<>();
 
     @Builder
-    public User(String email, String password, String username, OauthPlatform oauthPlatform) {
+    public User(String email, String password, String username, String nickname,OauthPlatform oauthPlatform) {
         this.email = Objects.requireNonNull(email);
         this.password = Objects.requireNonNull(password);
         this.username = Objects.requireNonNull(username);
+        this.nickname = Objects.requireNonNull(nickname);
         this.oauthPlatform = Objects.requireNonNullElse(oauthPlatform, OauthPlatform.NONE);
     }
 

@@ -18,5 +18,8 @@ public class CreateUserRequest {
     @NotEmpty
     @Schema(description = "사용자의 비밀번호", example = "1234", nullable = false)
     private String password;
+    @NotEmpty
+    @Schema(description = "사용자의 닉네임", example = "Nick", nullable = false)
+    private String nickname;
 
 }

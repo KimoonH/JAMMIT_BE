@@ -39,6 +39,7 @@ public class UserService {
         var user = User.builder()
                 .username(createUserRequest.getUsername())
                 .password(passwordEncoder.encode(password))
+                .nickname(createUserRequest.getNickname())
                 .email(email)
                 .oauthPlatform(OauthPlatform.NONE)
                 .build();

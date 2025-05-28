@@ -28,7 +28,7 @@ public class GatheringSession {
     private int recruitCount; // 해당 세션 모집 인원 수
     
     @Column(nullable = false)
-    private int currentCount; // 현재 모집된 인원 수
+    private int currentCount;// 현재 모집된 인원 수
 
     public static GatheringSession create(BandSession bandSession, int recruitCount) {
 
