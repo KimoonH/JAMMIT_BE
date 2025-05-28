@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 public class GatheringCreateRequest {
 
     private String name; // 모임 이름
