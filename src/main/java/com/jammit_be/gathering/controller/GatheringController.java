@@ -4,6 +4,7 @@ import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.gathering.dto.request.GatheringCreateRequest;
+import com.jammit_be.gathering.dto.request.GatheringUpdateRequest;
 import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
 import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
@@ -53,7 +54,7 @@ public class GatheringController {
     }
 
     @Operation(
-            summary = "모임 전체 목록 조회",
+            summary = "모임 전체 목록 조회 API",
             description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다.",
             responses = {
                     @ApiResponse(
@@ -76,7 +77,7 @@ public class GatheringController {
     }
 
     @Operation(
-            summary = "모임 상세 조회",
+            summary = "모임 상세 조회 API",
             description = "모임의 상세 정보를 조회합니다.",
             parameters = {
                     @Parameter(name = "id", description = "Gathering PK", required = true)
@@ -89,5 +90,25 @@ public class GatheringController {
     @GetMapping("/{id}")
     public GatheringDetailResponse getGatheringDetail(@PathVariable Long id) {
         return gatheringService.getGatheringDetail(id);
+    }
+
+    @Operation(
+            summary = "모임 수정 API",
+            description = "모임 정보(이름, 장소, 날짜 등)를 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공"),
+                    @ApiResponse(responseCode = "400", description = "입력값 오류"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음/로그인 필요"),
+                    @ApiResponse(responseCode = "404", description = "모임이 존재하지 않음")
+            }
+    )
+    @PutMapping("/{id}")
+    public CommonResponse<GatheringDetailResponse> updateGathering(
+            @PathVariable Long id,
+            @RequestBody GatheringUpdateRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+        GatheringDetailResponse response = gatheringService.updateGathering(id, request, user);
+        return CommonResponse.ok(response);
     }
 }

@@ -7,6 +7,7 @@ import com.jammit_be.gathering.dto.GatheringSessionInfo;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringCreateRequest;
 import com.jammit_be.gathering.dto.request.GatheringSessionRequest;
+import com.jammit_be.gathering.dto.request.GatheringUpdateRequest;
 import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
 import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
@@ -123,5 +124,49 @@ public class GatheringService {
                 .genres(gathering.getGenres())
                 .sessions(sessionInfos)
                 .build();
+    }
+
+    /**
+     * 모임 정보 및 밴드 세션 수정하는 서비스 로직
+     * @param id 수정할 모임 PK
+     * @param request 수정 요청 DTO
+     * @param user  로그인 사용자
+     * @return 수정 후 상세 응답 DTO
+     */
+    @Transactional
+    public GatheringDetailResponse updateGathering(Long id, GatheringUpdateRequest request, User user) {
+        // 1. 기존 모임 데이터 조회 (세션 정보 포함)
+        Gathering gathering = gatheringRepository.findByIdWithSessions(id)
+                .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+
+        // 작성자 권한 체크
+        if(!gathering.getCreatedBy().equals(user)) {
+            throw new AlertException("수정 권한이 없습니다.");
+        }
+
+        // 3. 값 변경 (changeXXX 메서드 활용)
+        gathering.changeName(request.getName());
+        gathering.changePlace(request.getPlace());
+        gathering.changeDescription(request.getDescription());
+        gathering.changeSong(request.getSong());
+        gathering.changeThumbnail(request.getThumbnail());
+        gathering.changeGatheringDateTime(request.getGatheringDateTime());
+        gathering.changeRecruitDeadline(request.getRecruitDeadline());
+        gathering.changeGenres(request.getGenres());
+
+        // 4. 세션(파트/모집인원) 정보가 수정된다면 별도 처리 (예시)
+        if (request.getGatheringSessions() != null && !request.getGatheringSessions().isEmpty()) {
+            // GatheringSessionRequest -> GatheringSession 변환
+            List<GatheringSession> newSessions = new ArrayList<>();
+            for (GatheringSessionRequest sessionReq : request.getGatheringSessions()) {
+                newSessions.add(GatheringSession.create(
+                        sessionReq.getBandSession(),
+                        sessionReq.getRecruitCount()
+                ));
+            }
+            gathering.updateGatheringSessions(newSessions);
+        }
+
+        return GatheringDetailResponse.from(gathering);
     }
 }

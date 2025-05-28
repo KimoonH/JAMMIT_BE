@@ -82,6 +82,47 @@ public class Gathering extends BaseUserEntity {
         this.viewCount++;
     }
 
+    public void changeName(String name) {
+        this.name = name;
+    }
+
+    public void changePlace(String place) {
+        this.place = place;
+    }
+
+    public void changeDescription(String description) {
+        this.description = description;
+    }
+
+    public void changeSong(String song) {
+        this.song = song;
+    }
+
+    public void changeThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public void changeGatheringDateTime(LocalDateTime gatheringDateTime) {
+        this.gatheringDateTime = gatheringDateTime;
+    }
+
+    public void changeRecruitDeadline(LocalDateTime recruitDeadline) {
+        this.recruitDeadline = recruitDeadline;
+    }
+
+
+    public void changeGenres(Set<Genre> genres) {
+        this.genres = new HashSet<>(genres);
+    }
+
+    public void updateGatheringSessions(List<GatheringSession> sessions) {
+        this.gatheringSessions.clear();
+        for (GatheringSession s : sessions) {
+            s.setGathering(this); // 연관관계 주인 설정
+            this.gatheringSessions.add(s);
+        }
+    }
+
     public static Gathering create(String name
                                 , String thumbnail
                                 , String place
