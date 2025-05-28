@@ -3,10 +3,12 @@ package com.jammit_be.gathering.entity;
 import com.jammit_be.common.entity.BaseUserEntity;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.review.entity.Review;
+import com.jammit_be.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +32,14 @@ public class Gathering extends BaseUserEntity {
     @Column(name = "gathering_song", nullable = false, length = 10)
     private String song; // 곡
     @Column(name = "gathering_thumbnail")
-    private String thumbnail;
+    private String thumbnail; // 이미지
+    @Column(name = "gathering_view_count", nullable = false)
+    private int viewCount = 0; // 조회수
+    @Column(name = "gathering_datetime", nullable = false)
+    private LocalDateTime gatheringDateTime; // 모집일
+
+    @Column(name = "recruit_deadline", nullable = false)
+    private LocalDateTime recruitDeadline; // 모집 마감일
     
     // 모임 장르들 (다중 선택 가능)
     @ElementCollection
@@ -69,4 +78,39 @@ public class Gathering extends BaseUserEntity {
         gatheringSession.setGathering(null);
     }
 
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    public static Gathering create(String name
+                                , String thumbnail
+                                , String place
+                                , String description
+                                , String song
+                                , LocalDateTime gatheringDateTime
+                                , LocalDateTime recruitDeadline
+                                , Set<Genre> genres
+                                , List<GatheringSession> sessions
+                                , User user
+                                   )
+
+    {
+        Gathering gathering = new Gathering();
+        gathering.name = name;
+        gathering.thumbnail = thumbnail;
+        gathering.place = place;
+        gathering.description = description;
+        gathering.song = song;
+        gathering.gatheringDateTime = gatheringDateTime;
+        gathering.recruitDeadline = recruitDeadline;
+        gathering.genres.addAll(genres);
+        gathering.createdBy = user;
+
+        for(GatheringSession session : sessions) {
+            session.setGathering(gathering);
+            gathering.gatheringSessions.add(session);
+        }
+
+        return gathering;
+    }
 }

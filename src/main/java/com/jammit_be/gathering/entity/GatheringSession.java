@@ -29,5 +29,13 @@ public class GatheringSession {
     
     @Column(nullable = false)
     private int currentCount; // 현재 모집된 인원 수
-    
+
+    public static GatheringSession create(BandSession bandSession, int recruitCount) {
+
+        GatheringSession session = new GatheringSession();
+        session.name = bandSession;
+        session.recruitCount = recruitCount;
+        session.currentCount = 0; // 생성 시점은 항상 0
+        return session;
+    }
 }

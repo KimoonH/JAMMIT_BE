@@ -7,8 +7,8 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/jammit
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username:
-    password:
+    username: hong
+    password: zxcv1234
 
   jpa:
     hibernate:

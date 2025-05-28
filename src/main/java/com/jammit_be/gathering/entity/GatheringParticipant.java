@@ -26,5 +26,4 @@ public class GatheringParticipant extends BaseEntity {
     private BandSession name;
     @Column(nullable = false)
     private boolean isApproved;
-
 }

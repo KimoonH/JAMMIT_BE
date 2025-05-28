@@ -38,7 +38,7 @@ public class User {
     private String password;
     @Column(nullable = false, length = 30)
     private String username;
-    @Column(nullable = false, length = 30)
+    @Column(nullable = true, length = 30)
     private String nickname; // 닉네임
     @CreatedDate
     private LocalDateTime createdAt;
