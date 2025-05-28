@@ -111,4 +111,15 @@ public class GatheringController {
         GatheringDetailResponse response = gatheringService.updateGathering(id, request, user);
         return CommonResponse.ok(response);
     }
+
+    @DeleteMapping("/{id}")
+    public CommonResponse<Void> deleteGathering(
+            @Parameter(description = "삭제할 모임 ID", example = "1")
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user
+    ) {
+
+        gatheringService.deleteGathering(id, user);
+        return CommonResponse.ok();
+    }
 }

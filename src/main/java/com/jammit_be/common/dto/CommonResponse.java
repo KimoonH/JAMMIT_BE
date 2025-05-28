@@ -25,6 +25,16 @@ public class CommonResponse<T> {
     @Schema(description = "결과 데이터")
     private T result;
 
+    public static <T> CommonResponse<T> ok() {
+        return CommonResponse.<T>builder()
+                .success(true)
+                .code(SUCCESS_CODE)
+                .message(SUCCESS_MESSAGE)
+                .result(null)
+                .build();
+    }
+
+
     public static <T> CommonResponse<T> ok(T result) {
         return CommonResponse.<T>builder()
                 .success(true)

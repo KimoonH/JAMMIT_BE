@@ -169,4 +169,22 @@ public class GatheringService {
 
         return GatheringDetailResponse.from(gathering);
     }
+
+    /**
+     * 모임 삭제
+     * @param id 삭제할 모임 PK
+     * @param user 로그인 사용자
+     */
+    @Transactional
+    public void deleteGathering(Long id, User user) {
+        Gathering gathering = gatheringRepository.findById(id)
+                .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+
+
+        if (!gathering.getCreatedBy().equals(user)) {
+            throw new AlertException("삭제 권한이 없습니다.");
+        }
+
+        gatheringRepository.delete(gathering);
+    }
 }
