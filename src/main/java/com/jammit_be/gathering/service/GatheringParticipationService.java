@@ -89,17 +89,24 @@ public class GatheringParticipationService {
         return GatheringParticipationResponse.canceled(gatheringId, user.getId(), participant.getName());
     }
 
+    /**
+     * 주최자 승인 처리 API
+     * @param gatheringId
+     * @param participantId
+     * @param owner
+     * @return
+     */
     @Transactional
-    public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId, User user) {
+    public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId, User owner) {
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
 
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
-                .orElseThrow(() -> new AlertException("해당 참가 신처이 없습니다."));
+                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
 
         // 2. 권한(주최자) 체크
-        if(!gathering.getCreatedBy().equals(user)) {
+        if(!gathering.getCreatedBy().equals(owner)) {
             throw new AlertException("승인 권한이 없습니다.");
         }
 
@@ -136,10 +143,50 @@ public class GatheringParticipationService {
         participant.approve();
         targetSession.incrementCurrentCount();
 
-
         return GatheringParticipationResponse.approved(
                 gatheringId
-                , user.getId()
+                , owner.getId()
                 , participant.getName())    ;
+    }
+
+    /**
+     * 주최자 참가자 모임 거절 처리
+     * @param gatheringId
+     * @param participantId
+     * @param owner
+     * @return
+     */
+    @Transactional
+    public GatheringParticipationResponse rejectParticipation(Long gatheringId, Long participantId, User owner) {
+        // 1. 모임 및 참가자 조회
+        Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
+                .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
+
+        GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
+                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
+
+        // 3. 주최자 권한 체크
+        if (!gathering.getCreatedBy().equals(owner)) {
+            throw new AlertException("모임 주최자만 처리할 수 있습니다.");
+        }
+
+        // 4. 이미 승인/취소/거절된 신청은 거절 불가
+        if (participant.isApproved()) {
+            return GatheringParticipationResponse.fail("이미 승인된 신청입니다.");
+        }
+        if (participant.isCanceled()) {
+            return GatheringParticipationResponse.fail("이미 취소된 신청입니다.");
+        }
+        if (participant.isRejected()) {
+            return GatheringParticipationResponse.fail("이미 거절된 신청입니다.");
+        }
+        // 5. 거절 처리
+        participant.reject();
+
+        return GatheringParticipationResponse.rejected(
+                gathering.getId()
+                ,participant.getUser().getId()
+                ,participant.getName()
+        );
     }
 }

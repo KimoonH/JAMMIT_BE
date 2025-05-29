@@ -27,25 +27,37 @@ public class GatheringParticipant extends BaseEntity {
     private boolean canceled = false;
     @Column(nullable = false)
     private boolean approved = false;
+    @Column(nullable = false)
+    private boolean rejected = false;
 
-    private GatheringParticipant(User user, Gathering gathering, BandSession name, boolean approved, boolean canceled) {
+    private GatheringParticipant(User user, Gathering gathering, BandSession name, boolean approved, boolean canceled, boolean rejected) {
         this.user = user;
         this.gathering = gathering;
         this.name = name;
         this.approved = approved;
         this.canceled = canceled;
-
+        this.rejected = rejected;
     }
 
     public static GatheringParticipant pending(User user, Gathering gathering, BandSession name) {
-        return new GatheringParticipant(user, gathering, name, false, false);
+        return new GatheringParticipant(user, gathering, name, false, false, false);
     }
 
     public void approve() {
         this.approved = true;
+        this.canceled = false;
+        this.rejected = false;
     }
 
     public void cancel() {
         this.canceled = true;
+        this.approved = false;
+        this.rejected = false;
+    }
+
+    public void reject() {
+        this.rejected = true;
+        this.approved = false;
+        this.canceled = false;
     }
 }
