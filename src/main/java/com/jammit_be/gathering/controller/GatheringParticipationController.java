@@ -1,7 +1,6 @@
 package com.jammit_be.gathering.controller;
 
 import com.jammit_be.common.dto.CommonResponse;
-import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.service.GatheringParticipationService;
@@ -55,4 +54,41 @@ public class GatheringParticipationController {
         return CommonResponse.ok(response);
     }
 
+    @Operation(
+            summary = "모임 참가 신청 취소 API",
+            description = "로그인한 사용자가 본인의 참가 신청을 취소합니다. (논리적 삭제, 실제 DB 삭제 아님)",
+            parameters = {
+                    @Parameter(name = "gatheringId", description = "모임 PK", example = "1"),
+                    @Parameter(name = "participantId", description = "참가 신청 PK", example = "100")
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "참가 취소 성공",
+                            content = @Content(schema = @Schema(implementation = GatheringParticipationResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "이미 취소된 참가 신청"
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "로그인 필요"
+                    ),
+                    @ApiResponse(
+                            responseCode = "403",
+                            description = "권한 없음(본인만 가능)"
+                    )
+            }
+    )
+    @PutMapping("/{participantId}/cancel")
+    public CommonResponse<GatheringParticipationResponse> cancelParticipation(
+            @PathVariable("gatheringId") Long gatheringId,
+            @PathVariable("participantId") Long participantId,
+            @AuthenticationPrincipal User user
+    ) {
+        GatheringParticipationResponse response =
+                gatheringParticipationService.cancelParticipation(gatheringId, participantId, user);
+        return CommonResponse.ok(response);
+    }
 }

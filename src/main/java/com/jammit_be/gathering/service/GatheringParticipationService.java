@@ -1,6 +1,5 @@
 package com.jammit_be.gathering.service;
 
-import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
@@ -35,7 +34,7 @@ public class GatheringParticipationService {
                 .orElseThrow(() -> new AlertException("존재하지 않는 모임입니다."));
 
         // 2. 이미 해당 세션에 신청한 기록이 있는지 체크 (중복 방지)
-        boolean alreadyExists = gatheringParticipantRepository.existsByUserAndGatheringAndName(user, gathering, request.getBandSession());
+        boolean alreadyExists = gatheringParticipantRepository.existsByUserAndGatheringAndNameAndCanceledFalse(user, gathering, request.getBandSession());
         if (alreadyExists) {
             return GatheringParticipationResponse.fail("이미 해당 파트로 신청한 이력이 있습니다.");
         }
@@ -68,5 +67,25 @@ public class GatheringParticipationService {
                 user.getId(),
                 request.getBandSession()
         );
+    }
+
+    /**
+     * 모임 참여 취소 API
+     * @param gatheringId 모임 아이디 PK
+     * @param participantId 참가자 아이디 PK
+     * @param user 유저
+     * @return
+     */
+    @Transactional
+    public GatheringParticipationResponse cancelParticipation(
+            Long gatheringId
+            , Long participantId
+            , User user) {
+        // 1. 참가 엔티티 조회
+        GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
+                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
+        // 취소
+        participant.cancel();
+        return GatheringParticipationResponse.canceled(gatheringId, user.getId(), participant.getName());
     }
 }
