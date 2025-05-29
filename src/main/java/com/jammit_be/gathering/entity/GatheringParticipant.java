@@ -26,7 +26,7 @@ public class GatheringParticipant extends BaseEntity {
     @Column(nullable = false)
     private boolean canceled = false;
     @Column(nullable = false)
-    private boolean approved;
+    private boolean approved = false;
 
     private GatheringParticipant(User user, Gathering gathering, BandSession name, boolean approved, boolean canceled) {
         this.user = user;

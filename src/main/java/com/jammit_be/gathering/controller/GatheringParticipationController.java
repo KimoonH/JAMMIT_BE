@@ -91,4 +91,27 @@ public class GatheringParticipationController {
                 gatheringParticipationService.cancelParticipation(gatheringId, participantId, user);
         return CommonResponse.ok(response);
     }
+
+
+    @Operation(
+            summary = "모임 참가자 승인 API",
+            description = "밴드 모임 주최자가 참가자를 승인합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "참가자 승인 성공"),
+                    @ApiResponse(responseCode = "400", description = "이미 승인된 참가자/정원 초과 등"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음 (주최자만 가능)")
+            }
+    )
+    @PostMapping("/{participantId}/approve")
+    public CommonResponse<GatheringParticipationResponse> approveParticipant(
+            @PathVariable("gatheringId") Long gatheringId,
+            @PathVariable("participantId") Long participantId,
+            @AuthenticationPrincipal User user
+    ) {
+        GatheringParticipationResponse response = gatheringParticipationService
+                .approveParticipation(gatheringId, participantId, user);
+
+
+        return CommonResponse.ok(response);
+    }
 }

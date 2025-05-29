@@ -88,4 +88,58 @@ public class GatheringParticipationService {
         participant.cancel();
         return GatheringParticipationResponse.canceled(gatheringId, user.getId(), participant.getName());
     }
+
+    @Transactional
+    public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId, User user) {
+        // 1. 모임 및 참가자 조회
+        Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
+                .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
+
+        GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
+                .orElseThrow(() -> new AlertException("해당 참가 신처이 없습니다."));
+
+        // 2. 권한(주최자) 체크
+        if(!gathering.getCreatedBy().equals(user)) {
+            throw new AlertException("승인 권한이 없습니다.");
+        }
+
+        // 3. 상태 검증
+        if(participant.isApproved()) {
+            return GatheringParticipationResponse.fail("이미 승인된 참가자 입니다.");
+        }
+
+        if(participant.isCanceled()) {
+            return GatheringParticipationResponse.fail("이미 취소된 참가자 입니다.");
+        }
+
+        // 4. 정원 인원 체크
+        GatheringSession targetSession = null;
+        for(GatheringSession s : gathering.getGatheringSessions()) {
+            if(s.getName() == participant.getName()) {
+                targetSession = s;
+                break;
+            }
+        }
+
+        if(targetSession == null) {
+            throw new AlertException("밴드 세션 정보를 찾을 수 없습니다.");
+        }
+
+        int approvedCount = gatheringParticipantRepository
+                .countByGatheringAndNameAndApprovedTrue(gathering, participant.getName());
+
+        if(approvedCount >= targetSession.getRecruitCount()) {
+            return GatheringParticipationResponse.fail("해당 세션의 모집 이원이 마감되었습니다.");
+        }
+
+        // 5. 승인 처리
+        participant.approve();
+        targetSession.incrementCurrentCount();
+
+
+        return GatheringParticipationResponse.approved(
+                gatheringId
+                , user.getId()
+                , participant.getName())    ;
+    }
 }

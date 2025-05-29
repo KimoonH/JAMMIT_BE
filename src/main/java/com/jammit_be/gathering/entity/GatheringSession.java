@@ -38,4 +38,14 @@ public class GatheringSession {
         session.currentCount = 0; // 생성 시점은 항상 0
         return session;
     }
+
+    public void incrementCurrentCount() {
+        this.currentCount += 1;
+    }
+
+    public void decrementCurrentCount() {
+        if(this.currentCount > 0) {
+            this.currentCount -= 1;
+        }
+    }
 }
