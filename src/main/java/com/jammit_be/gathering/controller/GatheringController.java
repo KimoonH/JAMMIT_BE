@@ -122,4 +122,5 @@ public class GatheringController {
         gatheringService.deleteGathering(id, user);
         return CommonResponse.ok();
     }
+
 }

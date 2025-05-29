@@ -187,4 +187,6 @@ public class GatheringService {
 
         gatheringRepository.delete(gathering);
     }
+
+
 }
