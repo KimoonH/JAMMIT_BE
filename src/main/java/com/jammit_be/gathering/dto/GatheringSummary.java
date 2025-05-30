@@ -1,0 +1,48 @@
+package com.jammit_be.gathering.dto;
+
+import com.jammit_be.gathering.entity.Gathering;
+import com.jammit_be.gathering.entity.GatheringSession;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Builder
+@Schema(description = "모임 요약 정보")
+public class GatheringSummary {
+
+    @Schema(description = "모임 ID (PK)", example = "1")
+    private final Long id; // 모임 PK
+    @Schema(description = "모임 이름", example = "신촌 밴드 모집")
+    private final String name; // 모임 이름
+    @Schema(description = "모임 장소", example = "신촌 연습실")
+    private final String place; // 모임 장소
+    @Schema(description = "모임 대표 이미지 URL & 파일", example = "https://cdn.example.com/img.jpg")
+    private final String thumbnail; // 모임 썸네일
+    @Schema(description = "모임 일시(시작 시간)", example = "2025-05-29T19:00:00")
+    private final LocalDateTime gatheringDateTime; // 실제 모임 일시(합주 시간)
+    @Schema(description = "총 모집 정원", example = "5")
+    private final int totalRecruit; // 총 모집 인원
+    @Schema(description = "현재 참가자 수", example = "3")
+    private final int totalCurrent; // 현재 모집된 인원
+    @Schema(description = "조회수", example = "123")
+    private final int viewCount; // 해당 모임의 조회수
+    @Schema(description = "모집 마감일시", example = "2025-06-30T23:59:59")
+    private final LocalDateTime recruitDeadline; // 모집 마감 일시(마감일 기준)
+
+    public static GatheringSummary of(Gathering gathering) {
+        return GatheringSummary.builder()
+                .id(gathering.getId())
+                .name(gathering.getName())
+                .place(gathering.getPlace())
+                .thumbnail(gathering.getThumbnail())
+                .gatheringDateTime(gathering.getGatheringDateTime())
+                .totalCurrent(gathering.getGatheringSessions().stream().mapToInt(GatheringSession::getRecruitCount).sum())
+                .totalRecruit(gathering.getGatheringSessions().stream().mapToInt(GatheringSession::getCurrentCount).sum())
+                .viewCount(gathering.getViewCount())
+                .recruitDeadline(gathering.getRecruitDeadline())
+                .build();
+    }
+}

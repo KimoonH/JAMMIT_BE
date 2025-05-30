@@ -1,6 +1,10 @@
 package com.jammit_be.user.entity;
 
+import com.jammit_be.common.enums.BandSession;
+import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.entity.GatheringParticipant;
+import com.jammit_be.review.entity.Review;
 import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
 import io.micrometer.common.util.StringUtils;
@@ -15,6 +19,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Setter
@@ -34,21 +40,43 @@ public class User {
     private String password;
     @Column(nullable = false, length = 30)
     private String username;
+    @Column(nullable = true, length = 30)
+    private String nickname; // 닉네임
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
     @Enumerated(EnumType.STRING)
     private OauthPlatform oauthPlatform;
-
     private String orgFileName;
     private String profileImagePath;
 
+    // 내가 참가한 모임들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<GatheringParticipant> participants = new ArrayList<>();
+
+    // 내가 선택한 곡장르들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private final List<PreferredGenre> preferredGenres = new ArrayList<>();
+
+    // 내가 선택한 밴드 세션들
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<PreferredBandSession> userBandSessions = new ArrayList<>();
+
+    // 내가 작성한 리뷰들
+    @OneToMany(mappedBy = "reviewer")
+    private List<Review> writtenReviews = new ArrayList<>();
+
+    // 내가 받은 리뷰들
+    @OneToMany(mappedBy = "reviewee")
+    private List<Review> receivedReviews = new ArrayList<>();
+
     @Builder
-    public User(String email, String password, String username, OauthPlatform oauthPlatform) {
+    public User(String email, String password, String username, String nickname,OauthPlatform oauthPlatform) {
         this.email = Objects.requireNonNull(email);
         this.password = Objects.requireNonNull(password);
         this.username = Objects.requireNonNull(username);
+        this.nickname = Objects.requireNonNull(nickname);
         this.oauthPlatform = Objects.requireNonNullElse(oauthPlatform, OauthPlatform.NONE);
     }
 
@@ -62,6 +90,8 @@ public class User {
         if (updateUserRequest.getPassword() != null) {
             this.password = passwordEncoder.encode(updateUserRequest.getPassword());
         }
+        updatePreferredGenres(updateUserRequest.getPreferredGenres());
+        updatePreferredBandSessions(updateUserRequest.getPreferredBandSessions());
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -75,6 +105,24 @@ public class User {
         } else {
             this.orgFileName = null;
             this.profileImagePath = null;
+        }
+    }
+
+    public void updatePreferredGenres(List<Genre> genres) {
+        this.preferredGenres.clear();
+        if (genres != null && !genres.isEmpty()) {
+            for (int i = 0; i < genres.size(); i++) {
+                this.preferredGenres.add(PreferredGenre.create(this, genres.get(i), i));
+            }
+        }
+    }
+
+    public void updatePreferredBandSessions(List<BandSession> bandSessions) {
+        this.userBandSessions.clear();
+        if (bandSessions != null && !bandSessions.isEmpty()) {
+            for (int i = 0; i < bandSessions.size(); i++) {
+                this.userBandSessions.add(PreferredBandSession.create(this, bandSessions.get(i), i));
+            }
         }
     }
 
