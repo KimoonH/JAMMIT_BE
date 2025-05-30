@@ -58,7 +58,6 @@ public class UserService {
         User user = userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new AlertException("유저를 찾지 못하였습니다"));
         user.modify(updateUserRequest, passwordEncoder);
-//    cacheService.evictCacheByKey("emailCheck", email);
         return UserResponse.of(user);
     }
 
