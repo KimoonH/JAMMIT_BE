@@ -1,5 +1,7 @@
 package com.jammit_be.user.entity;
 
+import com.jammit_be.common.enums.BandSession;
+import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.entity.GatheringParticipant;
 import com.jammit_be.review.entity.Review;
@@ -88,6 +90,8 @@ public class User {
         if (updateUserRequest.getPassword() != null) {
             this.password = passwordEncoder.encode(updateUserRequest.getPassword());
         }
+        updatePreferredGenres(updateUserRequest.getPreferredGenres());
+        updatePreferredBandSessions(updateUserRequest.getPreferredBandSessions());
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -101,6 +105,24 @@ public class User {
         } else {
             this.orgFileName = null;
             this.profileImagePath = null;
+        }
+    }
+
+    public void updatePreferredGenres(List<Genre> genres) {
+        this.preferredGenres.clear();
+        if (genres != null && !genres.isEmpty()) {
+            for (int i = 0; i < genres.size(); i++) {
+                this.preferredGenres.add(PreferredGenre.create(this, genres.get(i), i));
+            }
+        }
+    }
+
+    public void updatePreferredBandSessions(List<BandSession> bandSessions) {
+        this.userBandSessions.clear();
+        if (bandSessions != null && !bandSessions.isEmpty()) {
+            for (int i = 0; i < bandSessions.size(); i++) {
+                this.userBandSessions.add(PreferredBandSession.create(this, bandSessions.get(i), i));
+            }
         }
     }
 
