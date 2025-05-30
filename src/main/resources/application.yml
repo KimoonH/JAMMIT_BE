@@ -5,10 +5,10 @@ spring:
     timeout-per-shutdown-phase: 120
 
   datasource:
-    url: ENC(1KQa0Ks9zo7H6t0wbRWaL/3Tm2YNrULWj+Eqeh7p5y8Ex7SW2+aDXKSoEt5QKm0B6JdQd3Gq00nitkkHRg6UbEl2nFytmEFOgcITwh+eKhuXeVYF/fsGAGhUS4sGbvhaG818pzxxU48=)
+    url: ENC(y+8EW09dhqnbVKvBHvelaPzeqVEt7Pqfi2Dd2gh3keDLSLHRzZszwgkTw4VJC9lpMupiVSECnaLmFTwt3Y2PbOanFn8+GfGqRb15UT1VjUCTsMbg76A2hz3f+EGvgeFSrMHeEAZSnP8=)
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ENC(nt7qS4UJ8rJHy/vl+da+WT77wyJCBVV1)
-    password: ENC(sHkQj7hh8U0z5fQPO11ZUVyCp2K0Vp3g)
+    username: ENC(fwmMfrdwx6T/oH1EauIgiFPB5t8mhee7)
+    password: ENC(Mrza5y969J5MB41EDouk/kE2ED/7J35X)
 
   jpa:
     hibernate:
