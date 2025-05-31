@@ -1,7 +1,9 @@
 package com.jammit_be.gathering.service;
 
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringParticipant;
@@ -12,6 +14,10 @@ import com.jammit_be.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -188,5 +194,44 @@ public class GatheringParticipationService {
                 ,participant.getUser().getId()
                 ,participant.getName()
         );
+    }
+
+    /**
+     * 참가자 목록 조회
+     * @param gatheringId 모임 아이디 PK
+     * @return 모임에 참가된 목록
+     */
+    @Transactional(readOnly = true)
+    public GatheringParticipantListResponse findParticipants(Long gatheringId){
+        // 1. 참가자 목록 조회
+        List<GatheringParticipant> participants = gatheringParticipantRepository.findByGatheringId(gatheringId);
+
+        // 2. DTO 변환
+        List<GatheringParticipantSummary> summaries = new ArrayList<>();
+        // 참가자 없으면 빈 객체 반환
+        if(participants.isEmpty()) {
+            return GatheringParticipantListResponse.builder()
+                    .participants(Collections.emptyList())
+                    .total(0)
+                    .build();
+        }
+        for(GatheringParticipant participant : participants) {
+            summaries.add(GatheringParticipantSummary.builder()
+                            .participantId(participant.getId())
+                            .userId(participant.getUser().getId())
+                            .userNickname(participant.getUser().getNickname())
+                            .bandSession(participant.getName())
+                            .approved(participant.isApproved())
+                            .canceled(participant.isCanceled())
+                            .rejected(participant.isRejected())
+                            .createdAt(participant.getCreatedAt())
+                    .build());
+        }
+
+        // 3. 반환
+        return GatheringParticipantListResponse.builder()
+                .participants(summaries)
+                .total(summaries.size())
+                .build();
     }
 }
