@@ -1,8 +1,10 @@
 package com.jammit_be.gathering.controller;
 
+import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.service.GatheringParticipationService;
@@ -14,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,10 +54,9 @@ public class GatheringParticipationController {
     @PostMapping
     public CommonResponse<GatheringParticipationResponse> participate(
             @PathVariable Long gatheringId,
-            @RequestBody GatheringParticipationRequest request,
-            @AuthenticationPrincipal User user
+            @RequestBody GatheringParticipationRequest request
     ) {
-        GatheringParticipationResponse response = gatheringParticipationService.participate(gatheringId, request, user);
+        GatheringParticipationResponse response = gatheringParticipationService.participate(gatheringId, request);
         return CommonResponse.ok(response);
     }
 
@@ -88,11 +90,10 @@ public class GatheringParticipationController {
     @PutMapping("/{participantId}/cancel")
     public CommonResponse<GatheringParticipationResponse> cancelParticipation(
             @PathVariable("gatheringId") Long gatheringId,
-            @PathVariable("participantId") Long participantId,
-            @AuthenticationPrincipal User user
+            @PathVariable("participantId") Long participantId
     ) {
         GatheringParticipationResponse response =
-                gatheringParticipationService.cancelParticipation(gatheringId, participantId, user);
+                gatheringParticipationService.cancelParticipation(gatheringId, participantId);
         return CommonResponse.ok(response);
     }
 
@@ -109,11 +110,10 @@ public class GatheringParticipationController {
     @PostMapping("/{participantId}/approve")
     public CommonResponse<GatheringParticipationResponse> approveParticipant(
             @PathVariable("gatheringId") Long gatheringId,
-            @PathVariable("participantId") Long participantId,
-            @AuthenticationPrincipal User owner
+            @PathVariable("participantId") Long participantId
     ) {
         GatheringParticipationResponse response = gatheringParticipationService
-                .approveParticipation(gatheringId, participantId, owner);
+                .approveParticipation(gatheringId, participantId);
 
 
         return CommonResponse.ok(response);
@@ -131,11 +131,10 @@ public class GatheringParticipationController {
     @PutMapping("/{participantId}/reject")
     public CommonResponse<GatheringParticipationResponse> rejectParticipant(
             @PathVariable("gatheringId") Long gatheringId,
-            @PathVariable("participantId") Long participantId,
-            @AuthenticationPrincipal User owner
+            @PathVariable("participantId") Long participantId
     ) {
         GatheringParticipationResponse response = gatheringParticipationService
-                .rejectParticipation(gatheringId, participantId, owner);
+                .rejectParticipation(gatheringId, participantId);
 
         return CommonResponse.ok(response);
     }
@@ -169,7 +168,9 @@ public class GatheringParticipationController {
             summary = "내가 신청한 모임 목록 조회 API",
             description = "로그인한 사용자가 신청한 모임 목록을 조회합니다. 취소된 모임도 조회할 수 있습니다.",
             parameters = {
-                    @Parameter(name = "includeCanceled", description = "취소된 모임 포함 여부", example = "true")
+                    @Parameter(name = "includeCanceled", description = "취소된 모임 포함 여부", example = "true"),
+                    @Parameter(name = "page", description = "페이지 번호 (0부터 시작)", example = "0"),
+                    @Parameter(name = "size", description = "페이지 크기", example = "10")
             },
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -177,11 +178,11 @@ public class GatheringParticipationController {
             }
     )
     @GetMapping("/my")
-    public CommonResponse<List<GatheringSummary>> getMyParticipations(
+    public CommonResponse<GatheringListResponse> getMyParticipations(
             @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
-            @AuthenticationPrincipal User user
+            @Parameter(hidden = true) Pageable pageable
     ) {
-        List<GatheringSummary> myParticipations = gatheringParticipationService.getMyParticipations(user, includeCanceled);
+        GatheringListResponse myParticipations = gatheringParticipationService.getMyParticipations(includeCanceled, pageable);
         return CommonResponse.ok(myParticipations);
     }
 }

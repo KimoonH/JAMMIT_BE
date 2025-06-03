@@ -22,7 +22,7 @@ public class UpdateUserRequest {
     @Schema(description = "사용자의 비밀번호", example = "new_password", nullable = true)
     private String password;
     
-    @Schema(description = "선호하는 장르 목록", example = "[\"ROCK_METAL\", \"BALLAD\", \"FOLK\"]", nullable = true)
+    @Schema(description = "선호하는 장르 목록", example = "[\"ROCK\", \"BALLAD\", \"FOLK\"]", nullable = true)
     private List<Genre> preferredGenres;
     
     @Schema(description = "선호하는 밴드 세션 목록", example = "[\"DRUM\", \"BASS\", \"KEYBOARD\"]", nullable = true)

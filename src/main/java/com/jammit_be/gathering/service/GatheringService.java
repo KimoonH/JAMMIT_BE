@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.service;
 
+import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
@@ -34,11 +35,11 @@ public class GatheringService {
     /**
      * 모임 등록 API
      * @param request 모임 요청 데이터
-     * @param user
      * @return
      */
     @Transactional
-    public GatheringCreateResponse createGathering(GatheringCreateRequest request, User user) {
+    public GatheringCreateResponse createGathering(GatheringCreateRequest request) {
+        User user = AuthUtil.getUserInfo();
         List<GatheringSession> sessionEntities = request.getGatheringSessions().stream()
                 .map(GatheringSessionRequest::toEntity)
                 .toList();
@@ -131,11 +132,11 @@ public class GatheringService {
      * 모임 정보 및 밴드 세션 수정하는 서비스 로직
      * @param id 수정할 모임 PK
      * @param request 수정 요청 DTO
-     * @param user  로그인 사용자
      * @return 수정 후 상세 응답 DTO
      */
     @Transactional
-    public GatheringDetailResponse updateGathering(Long id, GatheringUpdateRequest request, User user) {
+    public GatheringDetailResponse updateGathering(Long id, GatheringUpdateRequest request) {
+        User user = AuthUtil.getUserInfo();
         // 1. 기존 모임 데이터 조회 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(id)
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
@@ -173,10 +174,10 @@ public class GatheringService {
     /**
      * 모임 취소
      * @param id 취소할 모임 PK
-     * @param user 로그인 사용자
      */
     @Transactional
-    public void cancelGathering(Long id, User user) {
+    public void cancelGathering(Long id) {
+        User user = AuthUtil.getUserInfo();
         Gathering gathering = gatheringRepository.findById(id)
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
 
@@ -186,6 +187,32 @@ public class GatheringService {
 
         // 실제 삭제 대신 상태를 취소로 변경
         gathering.cancel();
+    }
+
+    /**
+     * 내가 생성한 모임 목록 조회 API
+     * @param includeCanceled 취소된 모임 포함 여부
+     * @param pageable 페이징 정보
+     * @return 내가 생성한 모임 목록과 페이징 정보
+     */
+    @Transactional(readOnly = true)
+    public GatheringListResponse getMyCreatedGatherings(boolean includeCanceled, Pageable pageable) {
+        User user = AuthUtil.getUserInfo();
+        // 사용자가 생성한 모임 목록 조회 (페이징 처리)
+        Page<Gathering> gatheringPage = gatheringRepository.findByCreatedBy(user, includeCanceled, pageable);
+        
+        // 엔티티를 DTO로 변환
+        List<GatheringSummary> summaries = gatheringPage.getContent().stream()
+                .map(GatheringSummary::of)
+                .toList();
+        
+        // 페이징 정보와 함께 응답 객체 생성
+        return GatheringListResponse.builder()
+                .gatherings(summaries)
+                .currentPage(gatheringPage.getNumber())
+                .totalPage(gatheringPage.getTotalPages())
+                .totalElements(gatheringPage.getTotalElements())
+                .build();
     }
 
 }

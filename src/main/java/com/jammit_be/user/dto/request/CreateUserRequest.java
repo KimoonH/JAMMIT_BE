@@ -25,7 +25,7 @@ public class CreateUserRequest {
     @NotEmpty
     @Schema(description = "사용자의 닉네임", example = "Nick", nullable = false)
     private String nickname;
-    @Schema(description = "선호하는 장르 목록", example = "[\"ROCK_METAL\", \"INDIE\", \"JAZZ\"]")
+    @Schema(description = "선호하는 장르 목록", example = "[\"ROCK\", \"INDIE\", \"JAZZ\"]")
     private List<Genre> preferredGenres;
     @Schema(description = "선호하는 밴드 세션 목록", example = "[\"VOCAL\", \"ELECTRIC_GUITAR\", \"BASS\", \"KEYBOARD\"]")
     private List<BandSession> preferredBandSessions;
