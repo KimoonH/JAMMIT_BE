@@ -14,12 +14,14 @@ public interface GatheringParticipantRepository extends JpaRepository<GatheringP
     boolean existsByUserAndGatheringAndNameAndCanceledFalse(User user, Gathering gathering, BandSession name);
     // 해당 모임, 세션에서 승인된(approved) 인원 수 카운트
     int countByGatheringAndNameAndApprovedTrue(Gathering gathering, BandSession name);
-    
+
     // 내가 신청한 모임 목록 조회
     @Query("SELECT gp FROM GatheringParticipant gp JOIN FETCH gp.gathering WHERE gp.user = :user AND gp.canceled = false")
     List<GatheringParticipant> findMyParticipations(User user);
-    
+
     // 내가 신청한 모든 모임 목록 조회 (취소된 것 포함)
     @Query("SELECT gp FROM GatheringParticipant gp JOIN FETCH gp.gathering WHERE gp.user = :user")
     List<GatheringParticipant> findAllMyParticipations(User user);
+
+    List<GatheringParticipant> findByGatheringId(Long gatheringId);
 }

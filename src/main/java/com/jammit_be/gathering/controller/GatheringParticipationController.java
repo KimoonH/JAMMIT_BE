@@ -3,6 +3,7 @@ package com.jammit_be.gathering.controller;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.service.GatheringParticipationService;
 import com.jammit_be.user.entity.User;
@@ -135,6 +136,31 @@ public class GatheringParticipationController {
     ) {
         GatheringParticipationResponse response = gatheringParticipationService
                 .rejectParticipation(gatheringId, participantId, owner);
+
+        return CommonResponse.ok(response);
+    }
+
+    @Operation(
+            summary = "모임 참가자 목록 조회 API",
+            description = "지정한 모임(gatheringId)에 참가한 전체 참가자(신청자/승인자/취소/거절 포함) 목록을 반환합니다.",
+            parameters = {
+                    @Parameter(name = "gatheringId", description = "조회할 모임 PK", example = "1")
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "정상적으로 참가자 리스트 반환",
+                            content = @Content(schema = @Schema(implementation = GatheringParticipantListResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "모임이 없거나, 참가자가 없는 경우(빈 배열, total=0 반환)"
+                    )
+            }
+    )
+    @GetMapping
+    public CommonResponse<GatheringParticipantListResponse> getParticipants(@PathVariable Long gatheringId) {
+        GatheringParticipantListResponse response = gatheringParticipationService.findParticipants(gatheringId);
 
         return CommonResponse.ok(response);
     }
