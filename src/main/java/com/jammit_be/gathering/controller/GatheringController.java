@@ -1,8 +1,10 @@
 package com.jammit_be.gathering.controller;
 
+import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
+import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringCreateRequest;
 import com.jammit_be.gathering.dto.request.GatheringUpdateRequest;
 import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
@@ -48,14 +50,14 @@ public class GatheringController {
             }
     )
     @PostMapping
-    public CommonResponse<GatheringCreateResponse> createGathering(@RequestBody GatheringCreateRequest request, @AuthenticationPrincipal User user) {
-        GatheringCreateResponse response = gatheringService.createGathering(request, user);
+    public CommonResponse<GatheringCreateResponse> createGathering(@RequestBody GatheringCreateRequest request) {
+        GatheringCreateResponse response = gatheringService.createGathering(request);
         return CommonResponse.ok(response);
     }
 
     @Operation(
             summary = "모임 전체 목록 조회 API",
-            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다.",
+            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다. (로그인 없이 사용 가능)",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -68,17 +70,19 @@ public class GatheringController {
     public GatheringListResponse getGatherings(
             @Parameter(description = "음악 장르 (예: ROCK, JAZZ 등). 복수 선택 가능", example = "ROCK")
             @RequestParam(required = false) List<Genre> genres,
-            @Parameter(description = "모집 세션(예: VOCAL, DRUM 등). 복수 선택 가능", example = "VOCAL")
+            @Parameter(description = "모집 세션(예: VOCAL, DRUM, KEYBOARD 등). 복수 선택 가능", example = "VOCAL")
             @RequestParam(required = false) List<BandSession> sessions,
+            @Parameter(description = "취소된 모임 포함 여부", example = "false")
+            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
             @Parameter(hidden = true) Pageable pageable
             ){
 
-        return gatheringService.findGatherings(genres, sessions, pageable);
+        return gatheringService.findGatherings(genres, sessions, includeCanceled, pageable);
     }
 
     @Operation(
             summary = "모임 상세 조회 API",
-            description = "모임의 상세 정보를 조회합니다.",
+            description = "모임의 상세 정보를 조회합니다. (로그인 없이 사용 가능)",
             parameters = {
                     @Parameter(name = "id", description = "Gathering PK", required = true)
             },
@@ -105,22 +109,50 @@ public class GatheringController {
     @PutMapping("/{id}")
     public CommonResponse<GatheringDetailResponse> updateGathering(
             @PathVariable Long id,
-            @RequestBody GatheringUpdateRequest request,
-            @AuthenticationPrincipal User user
+            @RequestBody GatheringUpdateRequest request
     ) {
-        GatheringDetailResponse response = gatheringService.updateGathering(id, request, user);
+        GatheringDetailResponse response = gatheringService.updateGathering(id, request);
         return CommonResponse.ok(response);
     }
 
     @DeleteMapping("/{id}")
-    public CommonResponse<Void> deleteGathering(
-            @Parameter(description = "삭제할 모임 ID", example = "1")
-            @PathVariable Long id,
-            @AuthenticationPrincipal User user
+    @Operation(
+            summary = "모임 개설 취소 API",
+            description = "모임을 개설 취소 상태로 변경합니다. 취소된 모임은 조회는 가능하지만 새로운 참가자를 받을 수 없습니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "모임 취소 성공"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음/로그인 필요"),
+                    @ApiResponse(responseCode = "404", description = "모임이 존재하지 않음")
+            }
+    )
+    public CommonResponse<Void> cancelGathering(
+            @Parameter(description = "취소할 모임 ID", example = "1")
+            @PathVariable Long id
     ) {
-
-        gatheringService.deleteGathering(id, user);
+        gatheringService.cancelGathering(id);
         return CommonResponse.ok();
+    }
+
+    @Operation(
+            summary = "내가 생성한 모임 목록 조회 API",
+            description = "로그인한 사용자가 생성한 모임 목록을 조회합니다. 취소된 모임도 조회할 수 있습니다.",
+            parameters = {
+                    @Parameter(name = "includeCanceled", description = "취소된 모임 포함 여부", example = "false"),
+                    @Parameter(name = "page", description = "페이지 번호 (0부터 시작)", example = "0"),
+                    @Parameter(name = "size", description = "페이지 크기", example = "10")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공"),
+                    @ApiResponse(responseCode = "401", description = "로그인 필요")
+            }
+    )
+    @GetMapping("/my/created")
+    public CommonResponse<GatheringListResponse> getMyCreatedGatherings(
+            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
+            @Parameter(hidden = true) Pageable pageable
+    ) {
+        GatheringListResponse myGatherings = gatheringService.getMyCreatedGatherings(includeCanceled, pageable);
+        return CommonResponse.ok(myGatherings);
     }
 
 }

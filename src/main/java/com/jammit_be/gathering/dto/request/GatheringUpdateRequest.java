@@ -24,8 +24,6 @@ public class GatheringUpdateRequest {
     private String thumbnail;              // 모임 이미지
     @Schema(description = "모임 장소", example = "홍대 합주실 2호점")
     private String place;                  // 모임 장소
-    @Schema(description = "곡명", example = "Hi Bully")
-    private String song;                   // 곡
     @Schema(description = "모임 날짜/시간", example = "2025-07-10T19:00:00")
     private LocalDateTime gatheringDateTime; // 모임 날짜/시간
     @Schema(description = "총 모집 인원", example = "5")
@@ -41,7 +39,7 @@ public class GatheringUpdateRequest {
     private String description;            // 간단 소개
     @ArraySchema(
             schema = @Schema(implementation = GatheringSessionRequest.class),
-            arraySchema = @Schema(description = "각 파트별 모집 인원", example = "[{\"bandSession\":\"VOCAL\", \"recruitCount\":1}]")
+            arraySchema = @Schema(description = "각 파트별 모집 인원", example = "[{\"bandSession\":\"VOCAL\", \"recruitCount\":1}, {\"bandSession\":\"KEYBOARD\", \"recruitCount\":1}]")
     )
     private List<GatheringSessionRequest> gatheringSessions; // 각 파트별 모집 인원 수정
 }

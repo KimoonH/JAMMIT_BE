@@ -7,7 +7,8 @@ public enum BandSession {
     ACOUSTIC_GUITAR("통기타"),
     BASS("베이스"),
     STRING_INSTRUMENT("현악기"),
-    PERCUSSION("타악기");
+    PERCUSSION("타악기"),
+    KEYBOARD("건반");
 
     private final String displayName;
 

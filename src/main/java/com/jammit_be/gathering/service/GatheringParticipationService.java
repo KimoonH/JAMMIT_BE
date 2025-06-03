@@ -1,8 +1,12 @@
 package com.jammit_be.gathering.service;
 
+import com.jammit_be.auth.util.AuthUtil;
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.entity.Gathering;
@@ -12,12 +16,19 @@ import com.jammit_be.gathering.repository.GatheringParticipantRepository;
 import com.jammit_be.gathering.repository.GatheringRepository;
 import com.jammit_be.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +45,8 @@ public class GatheringParticipationService {
      * @return
      */
     @Transactional
-    public GatheringParticipationResponse participate(Long gatheringId, GatheringParticipationRequest request, User user) {
+    public GatheringParticipationResponse participate(Long gatheringId, GatheringParticipationRequest request) {
+        var user = AuthUtil.getUserInfo();
         // 1. 모임 조회 및 존재 검증 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않는 모임입니다."));
@@ -64,7 +76,7 @@ public class GatheringParticipationService {
         }
 
         // 5. GatheringParticipant(참가자) 엔티티 생성 및 저장 (대기 상태)
-        GatheringParticipant participant = GatheringParticipant.pending(user, gathering, request.getBandSession());
+        GatheringParticipant participant = GatheringParticipant.pending(user, gathering, request.getBandSession(), request.getIntroduction());
         gatheringParticipantRepository.save(participant);
 
         // 6. 응답 DTO 생성 및 반환 (승인 전: 대기)
@@ -79,14 +91,13 @@ public class GatheringParticipationService {
      * 모임 참여 취소 API
      * @param gatheringId 모임 아이디 PK
      * @param participantId 참가자 아이디 PK
-     * @param user 유저
      * @return
      */
     @Transactional
     public GatheringParticipationResponse cancelParticipation(
             Long gatheringId
-            , Long participantId
-            , User user) {
+            , Long participantId) {
+        User user = AuthUtil.getUserInfo();
         // 1. 참가 엔티티 조회
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
@@ -99,11 +110,11 @@ public class GatheringParticipationService {
      * 주최자 승인 처리 API
      * @param gatheringId
      * @param participantId
-     * @param owner
      * @return
      */
     @Transactional
-    public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId, User owner) {
+    public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId) {
+        User owner = AuthUtil.getUserInfo();
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
@@ -152,18 +163,18 @@ public class GatheringParticipationService {
         return GatheringParticipationResponse.approved(
                 gatheringId
                 , owner.getId()
-                , participant.getName())    ;
+                , participant.getName());
     }
 
     /**
      * 주최자 참가자 모임 거절 처리
      * @param gatheringId
      * @param participantId
-     * @param owner
      * @return
      */
     @Transactional
-    public GatheringParticipationResponse rejectParticipation(Long gatheringId, Long participantId, User owner) {
+    public GatheringParticipationResponse rejectParticipation(Long gatheringId, Long participantId) {
+        User owner = AuthUtil.getUserInfo();
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
@@ -216,15 +227,18 @@ public class GatheringParticipationService {
                     .build();
         }
         for(GatheringParticipant participant : participants) {
+            var user = participant.getUser();
             summaries.add(GatheringParticipantSummary.builder()
                             .participantId(participant.getId())
-                            .userId(participant.getUser().getId())
-                            .userNickname(participant.getUser().getNickname())
+                            .userId(user.getId())
+                            .userEmail(user.getEmail())
+                            .userNickname(user.getNickname())
                             .bandSession(participant.getName())
                             .approved(participant.isApproved())
                             .canceled(participant.isCanceled())
                             .rejected(participant.isRejected())
                             .createdAt(participant.getCreatedAt())
+                            .introduction(participant.getIntroduction())
                     .build());
         }
 
@@ -232,6 +246,50 @@ public class GatheringParticipationService {
         return GatheringParticipantListResponse.builder()
                 .participants(summaries)
                 .total(summaries.size())
+                .build();
+    }
+
+    /**
+     * 내가 신청한 모임 목록 조회 API
+     * @param includeCanceled 취소된 모임 포함 여부
+     * @param pageable 페이징 정보
+     * @return 내가 신청한 모임 목록과 페이징 정보
+     */
+    @Transactional(readOnly = true)
+    public GatheringListResponse getMyParticipations(boolean includeCanceled, Pageable pageable) {
+        User user = AuthUtil.getUserInfo();
+        Page<GatheringParticipant> participationsPage;
+
+        if (includeCanceled) {
+            // 취소된 것 포함 모든 모임
+            participationsPage = gatheringParticipantRepository.findAllMyParticipations(user, pageable);
+        } else {
+            // 취소되지 않은 모임만
+            participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
+        }
+
+        // 페이지 내용 처리
+        Set<Gathering> gatherings = new HashSet<>();
+        for (GatheringParticipant participation : participationsPage.getContent()) {
+            // 모임 상태 확인 (모임이 취소되었는데 includeCanceled가 false라면 제외)
+            Gathering gathering = participation.getGathering();
+            if (!includeCanceled && gathering.getStatus() == GatheringStatus.CANCELED) {
+                continue;
+            }
+            gatherings.add(gathering);
+        }
+
+        // Gathering을 GatheringSummary로 변환
+        List<GatheringSummary> summaries = gatherings.stream()
+                .map(GatheringSummary::of)
+                .collect(Collectors.toList());
+                
+        // 페이징 정보와 함께 응답 객체 생성
+        return GatheringListResponse.builder()
+                .gatherings(summaries)
+                .currentPage(participationsPage.getNumber())
+                .totalPage(participationsPage.getTotalPages())
+                .totalElements(participationsPage.getTotalElements())
                 .build();
     }
 }

@@ -18,4 +18,5 @@ public class GatheringParticipantSummary {
     private final boolean canceled;             // 취소 여부
     private final boolean rejected;             // 거절 여부
     private final LocalDateTime createdAt;      // 신청일시
+    private final String introduction;          // 참여자 소개 문구
 }

@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.service;
 
+import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
@@ -34,11 +35,11 @@ public class GatheringService {
     /**
      * 모임 등록 API
      * @param request 모임 요청 데이터
-     * @param user
      * @return
      */
     @Transactional
-    public GatheringCreateResponse createGathering(GatheringCreateRequest request, User user) {
+    public GatheringCreateResponse createGathering(GatheringCreateRequest request) {
+        User user = AuthUtil.getUserInfo();
         List<GatheringSession> sessionEntities = request.getGatheringSessions().stream()
                 .map(GatheringSessionRequest::toEntity)
                 .toList();
@@ -48,7 +49,6 @@ public class GatheringService {
                 ,request.getThumbnail()
                 ,request.getPlace()
                 ,request.getDescription()
-                ,request.getSong()
                 ,request.getGatheringDateTime()
                 ,request.getRecruitDateTime()
                 ,request.getGenres()
@@ -65,17 +65,19 @@ public class GatheringService {
      * 모임 전체 목록 조회 API
      * @param genres 검색할 음악 장르 리스트
      * @param sessions 모집 파트 리스트
+     * @param includeCanceled 취소된 모임 포함 여부
      * @param pageable 페이징/정렬 정보
      * @return 데이터 + 페이징
      */
     public GatheringListResponse findGatherings(
             List<Genre> genres
             , List<BandSession> sessions
+            , boolean includeCanceled
             , Pageable pageable
     ) {
 
         // 1. DB에서 조건/페이징/정렬에 맞는 Gathering 목록 조회
-        Page<Gathering> page = gatheringRepository.findGatherings(genres, sessions, pageable);
+        Page<Gathering> page = gatheringRepository.findGatherings(genres, sessions, includeCanceled, pageable);
 
         // 2. 각 엔티티를 DTO(GatheringSummary)로 변환
         List<GatheringSummary> summaries = new ArrayList<>();
@@ -130,11 +132,11 @@ public class GatheringService {
      * 모임 정보 및 밴드 세션 수정하는 서비스 로직
      * @param id 수정할 모임 PK
      * @param request 수정 요청 DTO
-     * @param user  로그인 사용자
      * @return 수정 후 상세 응답 DTO
      */
     @Transactional
-    public GatheringDetailResponse updateGathering(Long id, GatheringUpdateRequest request, User user) {
+    public GatheringDetailResponse updateGathering(Long id, GatheringUpdateRequest request) {
+        User user = AuthUtil.getUserInfo();
         // 1. 기존 모임 데이터 조회 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(id)
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
@@ -148,7 +150,6 @@ public class GatheringService {
         gathering.changeName(request.getName());
         gathering.changePlace(request.getPlace());
         gathering.changeDescription(request.getDescription());
-        gathering.changeSong(request.getSong());
         gathering.changeThumbnail(request.getThumbnail());
         gathering.changeGatheringDateTime(request.getGatheringDateTime());
         gathering.changeRecruitDeadline(request.getRecruitDeadline());
@@ -171,22 +172,47 @@ public class GatheringService {
     }
 
     /**
-     * 모임 삭제
-     * @param id 삭제할 모임 PK
-     * @param user 로그인 사용자
+     * 모임 취소
+     * @param id 취소할 모임 PK
      */
     @Transactional
-    public void deleteGathering(Long id, User user) {
+    public void cancelGathering(Long id) {
+        User user = AuthUtil.getUserInfo();
         Gathering gathering = gatheringRepository.findById(id)
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
 
-
         if (!gathering.getCreatedBy().equals(user)) {
-            throw new AlertException("삭제 권한이 없습니다.");
+            throw new AlertException("취소 권한이 없습니다.");
         }
 
-        gatheringRepository.delete(gathering);
+        // 실제 삭제 대신 상태를 취소로 변경
+        gathering.cancel();
     }
 
+    /**
+     * 내가 생성한 모임 목록 조회 API
+     * @param includeCanceled 취소된 모임 포함 여부
+     * @param pageable 페이징 정보
+     * @return 내가 생성한 모임 목록과 페이징 정보
+     */
+    @Transactional(readOnly = true)
+    public GatheringListResponse getMyCreatedGatherings(boolean includeCanceled, Pageable pageable) {
+        User user = AuthUtil.getUserInfo();
+        // 사용자가 생성한 모임 목록 조회 (페이징 처리)
+        Page<Gathering> gatheringPage = gatheringRepository.findByCreatedBy(user, includeCanceled, pageable);
+        
+        // 엔티티를 DTO로 변환
+        List<GatheringSummary> summaries = gatheringPage.getContent().stream()
+                .map(GatheringSummary::of)
+                .toList();
+        
+        // 페이징 정보와 함께 응답 객체 생성
+        return GatheringListResponse.builder()
+                .gatherings(summaries)
+                .currentPage(gatheringPage.getNumber())
+                .totalPage(gatheringPage.getTotalPages())
+                .totalElements(gatheringPage.getTotalElements())
+                .build();
+    }
 
 }

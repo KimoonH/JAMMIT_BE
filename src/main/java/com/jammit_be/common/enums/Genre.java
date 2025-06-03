@@ -1,7 +1,8 @@
 package com.jammit_be.common.enums;
 
 public enum Genre {
-    ROCK_METAL("락/메탈"),
+    ROCK("락"),
+    METAL("메탈"),
     POP("팝"),
     BALLAD("발라드"),
     INDIE("인디"),

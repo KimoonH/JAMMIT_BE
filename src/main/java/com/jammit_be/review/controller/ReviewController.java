@@ -3,6 +3,7 @@ package com.jammit_be.review.controller;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
+import com.jammit_be.review.dto.response.ReviewStatisticsResponse;
 import com.jammit_be.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,7 +42,6 @@ public class ReviewController {
                                             value = "{\n" +
                                                     "  \"revieweeId\": 2,\n" +
                                                     "  \"gatheringId\": 1,\n" +
-                                                    "  \"score\": 5,\n" +
                                                     "  \"content\": \"함께 연주하기 좋은 사람이었습니다. 다음에도 함께 하고 싶습니다.\",\n" +
                                                     "  \"isPracticeHelped\": true,\n" +
                                                     "  \"isGoodWithMusic\": true,\n" +
@@ -129,6 +129,27 @@ public class ReviewController {
     public CommonResponse<List<ReviewResponse>> getReceivedReviews() {
         var response = reviewService.getReviewsByReviewee();
         return new CommonResponse<List<ReviewResponse>>().success(response);
+    }
+
+    @GetMapping("/received/statistics")
+    @Operation(
+            summary = "받은 리뷰 평가항목별 통계 정보 조회 API", 
+            description = "현재 로그인한 사용자가 받은 리뷰의 평가항목별 통계 정보를 조회합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", 
+                            description = "통계 정보 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ReviewStatisticsResponse.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+            }
+    )
+    public CommonResponse<ReviewStatisticsResponse> getReviewStatistics() {
+        var response = reviewService.getReviewStatistics();
+        return new CommonResponse<ReviewStatisticsResponse>().success(response);
     }
 
     @GetMapping("/gathering/{gatheringId}")

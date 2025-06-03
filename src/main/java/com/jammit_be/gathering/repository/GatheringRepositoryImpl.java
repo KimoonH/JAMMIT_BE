@@ -2,6 +2,7 @@ package com.jammit_be.gathering.repository;
 
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.QGathering;
 import com.jammit_be.gathering.entity.QGatheringSession;
@@ -24,7 +25,7 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Gathering> findGatherings(List<Genre> genres, List<BandSession> sessions, Pageable pageable) {
+    public Page<Gathering> findGatherings(List<Genre> genres, List<BandSession> sessions, boolean includeCanceled, Pageable pageable) {
         // 1. Q타입 생성
         QGathering gathering = QGathering.gathering;
         QGatheringSession session = QGatheringSession.gatheringSession;
@@ -37,6 +38,11 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
         }
         if (sessions != null && !sessions.isEmpty()) {
             builder.and(session.name.in(sessions));
+        }
+        
+        // 취소된 모임 필터링
+        if (!includeCanceled) {
+            builder.and(gathering.status.eq(GatheringStatus.ACTIVE));
         }
 
         // 3. 실제 데이터 쿼리 생성

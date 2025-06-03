@@ -37,9 +37,6 @@ public class ReviewResponse {
     @Schema(description = "모임 이름", example = "락밴드 모임")
     private String gatheringName;
 
-    @Schema(description = "별점", example = "5", minimum = "1", maximum = "5")
-    private int score;
-
     @Schema(description = "리뷰 내용", example = "함께 연주하기 좋은 사람이었습니다. 다음에도 함께 하고 싶습니다.")
     private String content;
 
@@ -82,7 +79,6 @@ public class ReviewResponse {
                 .revieweeNickname(review.getReviewee().getNickname())
                 .gatheringId(review.getGathering().getId())
                 .gatheringName(review.getGathering().getName())
-                .score(review.getScore())
                 .content(review.getContent())
                 .isPracticeHelped(review.isPracticeHelped())
                 .isGoodWithMusic(review.isGoodWithMusic())

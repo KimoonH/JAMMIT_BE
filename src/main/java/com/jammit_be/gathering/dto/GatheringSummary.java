@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.dto;
 
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringSession;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,6 +32,8 @@ public class GatheringSummary {
     private final int viewCount; // 해당 모임의 조회수
     @Schema(description = "모집 마감일시", example = "2025-06-30T23:59:59")
     private final LocalDateTime recruitDeadline; // 모집 마감 일시(마감일 기준)
+    @Schema(description = "모임 상태", example = "ACTIVE")
+    private final GatheringStatus status; // 모임 상태
 
     public static GatheringSummary of(Gathering gathering) {
         return GatheringSummary.builder()
@@ -43,6 +46,7 @@ public class GatheringSummary {
                 .totalRecruit(gathering.getGatheringSessions().stream().mapToInt(GatheringSession::getCurrentCount).sum())
                 .viewCount(gathering.getViewCount())
                 .recruitDeadline(gathering.getRecruitDeadline())
+                .status(gathering.getStatus())
                 .build();
     }
 }
