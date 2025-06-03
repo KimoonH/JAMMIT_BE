@@ -1,8 +1,12 @@
 package com.jammit_be.review.service;
 
 import com.jammit_be.auth.util.AuthUtil;
+import com.jammit_be.common.enums.GatheringStatus;
+import com.jammit_be.common.enums.ParticipantStatus;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.entity.Gathering;
+import com.jammit_be.gathering.entity.GatheringParticipant;
+import com.jammit_be.gathering.repository.GatheringParticipantRepository;
 import com.jammit_be.gathering.repository.GatheringRepository;
 import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
@@ -25,33 +29,53 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final GatheringRepository gatheringRepository;
+    private final GatheringParticipantRepository gatheringParticipantRepository;
 
     /**
      * 리뷰 생성
      */
     @Transactional
     public ReviewResponse createReview(CreateReviewRequest request) {
-        Long reviewerId = AuthUtil.getUserInfo().getId();
-        // 1. 리뷰 작성자 확인
-        User reviewer = userRepository.findById(reviewerId)
-                .orElseThrow(() -> new AlertException("리뷰 작성자를 찾을 수 없습니다."));
-
-        // 2. 리뷰 대상자 확인
+        User reviewer = AuthUtil.getUserInfo();
+        
+        // 1. 리뷰 대상자 확인
         User reviewee = userRepository.findById(request.getRevieweeId())
                 .orElseThrow(() -> new AlertException("리뷰 대상자를 찾을 수 없습니다."));
 
-        // 3. 모임 확인
+        // 2. 모임 확인
         Gathering gathering = gatheringRepository.findById(request.getGatheringId())
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+                
+        // 3. 모임 상태 확인 - 모임이 완료 상태인지 확인
+        if (gathering.getStatus() != GatheringStatus.COMPLETED) {
+            throw new AlertException("완료된 모임만 리뷰를 작성할 수 있습니다.");
+        }
+        
+        // 4. 리뷰 작성자가 해당 모임에 참여 완료했는지 확인
+        boolean reviewerParticipated = gatheringParticipantRepository.isParticipationCompleted(reviewer, gathering);
+        if (!reviewerParticipated) {
+            throw new AlertException("모임에 참여 완료한 사용자만 리뷰를 작성할 수 있습니다.");
+        }
+        
+        // 5. 리뷰 대상자가 해당 모임에 참여 완료했는지 확인
+        boolean revieweeParticipated = gatheringParticipantRepository.isParticipationCompleted(reviewee, gathering);
+        if (!revieweeParticipated) {
+            throw new AlertException("모임에 참여 완료한 사용자에게만 리뷰를 작성할 수 있습니다.");
+        }
 
-        // 4. 이미 해당 모임에서 해당 사용자에 대한 리뷰를 작성했는지 확인
+        // 6. 이미 해당 모임에서 해당 사용자에 대한 리뷰를 작성했는지 확인
         reviewRepository.findByReviewerIdAndRevieweeIdAndGatheringId(
-                        reviewerId, request.getRevieweeId(), request.getGatheringId())
+                        reviewer.getId(), request.getRevieweeId(), request.getGatheringId())
                 .ifPresent(r -> {
                     throw new AlertException("이미 이 모임에서 해당 사용자에 대한 리뷰를 작성했습니다.");
                 });
 
-        // 5. 리뷰 생성
+        // 7. 자기 자신에게 리뷰를 작성하는지 확인
+        if (reviewer.getId().equals(request.getRevieweeId())) {
+            throw new AlertException("자기 자신에게 리뷰를 작성할 수 없습니다.");
+        }
+
+        // 8. 리뷰 생성
         Review review = new Review();
         review.setReviewer(reviewer);
         review.setReviewee(reviewee);
