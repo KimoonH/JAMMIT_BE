@@ -42,7 +42,7 @@ public class Gathering extends BaseUserEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private GatheringStatus status = GatheringStatus.ACTIVE; // 모임 상태 (기본값: 활성)
+    private GatheringStatus status = GatheringStatus.RECRUITING; // 모임 상태 (기본값: 멤버 모집 중)
     
     // 모임 장르들 (다중 선택 가능)
     @ElementCollection
@@ -129,11 +129,37 @@ public class Gathering extends BaseUserEntity {
     }
     
     /**
-     * 모임이 활성 상태인지 확인합니다.
-     * @return 활성 상태이면 true
+     * 모임을 모집 완료 상태로 변경합니다.
      */
-    public boolean isActive() {
-        return this.status == GatheringStatus.ACTIVE;
+    public void confirm() {
+        if (this.status == GatheringStatus.RECRUITING) {
+            this.status = GatheringStatus.CONFIRMED;
+        }
+    }
+    
+    /**
+     * 모임을 완료 상태로 변경합니다.
+     * 실제 합주가 완료되었고, 참가자들이 서로를 리뷰할 수 있는 상태로 변경합니다.
+     */
+    public void complete() {
+        if (this.status == GatheringStatus.CONFIRMED) {
+            this.status = GatheringStatus.COMPLETED;
+            
+            // 모든 승인된 참가자를 참여 완료 상태로 변경
+            for (GatheringParticipant participant : this.participants) {
+                if (participant.isApproved()) {
+                    participant.complete();
+                }
+            }
+        }
+    }
+
+    /**
+     * 모임에 참가 신청이 가능한 상태인지 확인합니다.
+     * @return 참가 신청 가능 상태이면 true
+     */
+    public boolean isJoinable() {
+        return this.status.isJoinable();
     }
 
     public static Gathering create(String name
@@ -157,7 +183,7 @@ public class Gathering extends BaseUserEntity {
         gathering.recruitDeadline = recruitDeadline;
         gathering.genres.addAll(genres);
         gathering.createdBy = user;
-        gathering.status = GatheringStatus.ACTIVE;
+        gathering.status = GatheringStatus.RECRUITING;
 
         for(GatheringSession session : sessions) {
             session.setGathering(gathering);
