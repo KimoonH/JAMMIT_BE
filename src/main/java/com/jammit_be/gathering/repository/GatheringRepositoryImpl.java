@@ -42,7 +42,8 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
         
         // 취소된 모임 필터링
         if (!includeCanceled) {
-            builder.and(gathering.status.eq(GatheringStatus.ACTIVE));
+            // 취소되지 않은 모든 상태 포함 (RECRUITING, CONFIRMED, COMPLETED)
+            builder.and(gathering.status.ne(GatheringStatus.CANCELED));
         }
 
         // 3. 실제 데이터 쿼리 생성

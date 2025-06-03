@@ -11,6 +11,7 @@ import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
 import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.service.GatheringService;
+import com.jammit_be.gathering.service.GatheringParticipationService;
 import com.jammit_be.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,6 +34,7 @@ import java.util.List;
 public class GatheringController {
 
     private final GatheringService gatheringService;
+    private final GatheringParticipationService gatheringParticipationService;
 
     @Operation(
             summary = "모임 등록 API", description = "새로운 모임을 생성한다."
@@ -153,6 +155,24 @@ public class GatheringController {
     ) {
         GatheringListResponse myGatherings = gatheringService.getMyCreatedGatherings(includeCanceled, pageable);
         return CommonResponse.ok(myGatherings);
+    }
+
+    @Operation(
+            summary = "모임 완료 처리 API",
+            description = "실제 합주가 완료되었음을 표시하고, 모임을 완료 상태로 변경합니다. 완료된 모임의 참가자들은 서로를 리뷰할 수 있습니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "모임 완료 처리 성공"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음/로그인 필요"),
+                    @ApiResponse(responseCode = "404", description = "모임이 존재하지 않음")
+            }
+    )
+    @PutMapping("/{id}/complete")
+    public CommonResponse<Void> completeGathering(
+            @Parameter(description = "완료 처리할 모임 ID", example = "1")
+            @PathVariable Long id
+    ) {
+        gatheringParticipationService.completeGathering(id);
+        return CommonResponse.ok();
     }
 
 }
