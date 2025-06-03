@@ -75,16 +75,8 @@ public class GatheringParticipant extends BaseEntity {
     public boolean isRejected() {
         return this.status == ParticipantStatus.REJECTED;
     }
-    
-    public boolean isPending() {
-        return this.status == ParticipantStatus.PENDING;
-    }
-    
+
     public boolean isCompleted() {
         return this.status == ParticipantStatus.COMPLETED;
-    }
-    
-    public boolean isReviewable() {
-        return this.status.isReviewable();
     }
 }
