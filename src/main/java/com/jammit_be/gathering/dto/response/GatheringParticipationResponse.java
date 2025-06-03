@@ -16,7 +16,9 @@ public class GatheringParticipationResponse {
     private final Long userId; // 참여 신청자(유저)의 식별자 PK
     @Schema(description = "신청 밴드 세션", example = "KEYBOARD")
     private final BandSession bandSession; //신청한 밴드 세션(파트) 종류
-    @Schema(description = "참가자 상태", example = "PENDING")
+    @Schema(description = "참가자 상태", example = "PENDING", 
+            allowableValues = {"PENDING", "APPROVED", "REJECTED", "COMPLETED", "CANCELED"},
+            implementation = ParticipantStatus.class)
     private final ParticipantStatus status; // 참가자 상태
     @Schema(description = "결과 메시지", example = "참여 신청이 완료되었습니다. 승인 대기 중입니다.")
     private final String message; // 응답 메시지
