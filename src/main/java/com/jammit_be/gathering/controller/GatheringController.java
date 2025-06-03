@@ -55,7 +55,7 @@ public class GatheringController {
 
     @Operation(
             summary = "모임 전체 목록 조회 API",
-            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다.",
+            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다. (로그인 없이 사용 가능)",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -68,17 +68,19 @@ public class GatheringController {
     public GatheringListResponse getGatherings(
             @Parameter(description = "음악 장르 (예: ROCK, JAZZ 등). 복수 선택 가능", example = "ROCK")
             @RequestParam(required = false) List<Genre> genres,
-            @Parameter(description = "모집 세션(예: VOCAL, DRUM 등). 복수 선택 가능", example = "VOCAL")
+            @Parameter(description = "모집 세션(예: VOCAL, DRUM, KEYBOARD 등). 복수 선택 가능", example = "VOCAL")
             @RequestParam(required = false) List<BandSession> sessions,
+            @Parameter(description = "취소된 모임 포함 여부", example = "false")
+            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
             @Parameter(hidden = true) Pageable pageable
             ){
 
-        return gatheringService.findGatherings(genres, sessions, pageable);
+        return gatheringService.findGatherings(genres, sessions, includeCanceled, pageable);
     }
 
     @Operation(
             summary = "모임 상세 조회 API",
-            description = "모임의 상세 정보를 조회합니다.",
+            description = "모임의 상세 정보를 조회합니다. (로그인 없이 사용 가능)",
             parameters = {
                     @Parameter(name = "id", description = "Gathering PK", required = true)
             },
@@ -113,13 +115,21 @@ public class GatheringController {
     }
 
     @DeleteMapping("/{id}")
-    public CommonResponse<Void> deleteGathering(
-            @Parameter(description = "삭제할 모임 ID", example = "1")
+    @Operation(
+            summary = "모임 취소 API",
+            description = "모임을 취소 상태로 변경합니다. 취소된 모임은 조회는 가능하지만 새로운 참가자를 받을 수 없습니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "모임 취소 성공"),
+                    @ApiResponse(responseCode = "403", description = "권한 없음/로그인 필요"),
+                    @ApiResponse(responseCode = "404", description = "모임이 존재하지 않음")
+            }
+    )
+    public CommonResponse<Void> cancelGathering(
+            @Parameter(description = "취소할 모임 ID", example = "1")
             @PathVariable Long id,
             @AuthenticationPrincipal User user
     ) {
-
-        gatheringService.deleteGathering(id, user);
+        gatheringService.cancelGathering(id, user);
         return CommonResponse.ok();
     }
 

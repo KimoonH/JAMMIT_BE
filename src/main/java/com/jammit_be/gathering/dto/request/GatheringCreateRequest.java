@@ -23,8 +23,6 @@ public class GatheringCreateRequest {
     private String place; // 모임 장소
     @Schema(description = "모임 소개", example = "락음악을 사랑하는 분 환영")
     private String description; // 모임 소개
-    @Schema(description = "모임 곡", example = "Hi Bully")
-    private String song; // 모임 곡
     @Schema(description = "모임 일시", example = "2025-07-20T19:00:00")
     private LocalDateTime gatheringDateTime; // 모임 일시
     @Schema(description = "모집 마감일", example = "2025-07-15T23:59:59")

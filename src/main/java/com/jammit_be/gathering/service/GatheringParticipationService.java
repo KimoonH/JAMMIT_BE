@@ -1,6 +1,8 @@
 package com.jammit_be.gathering.service;
 
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.entity.Gathering;
@@ -12,6 +14,11 @@ import com.jammit_be.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -188,5 +195,40 @@ public class GatheringParticipationService {
                 ,participant.getUser().getId()
                 ,participant.getName()
         );
+    }
+
+    /**
+     * 내가 신청한 모임 목록 조회
+     * @param user 로그인 유저
+     * @param includeCanceled 취소된 모임 포함 여부
+     * @return 내가 신청한 모임 목록
+     */
+    @Transactional(readOnly = true)
+    public List<GatheringSummary> getMyParticipations(User user, boolean includeCanceled) {
+        List<GatheringParticipant> participations;
+        
+        if (includeCanceled) {
+            // 취소된 것 포함 모든 모임
+            participations = gatheringParticipantRepository.findAllMyParticipations(user);
+        } else {
+            // 취소되지 않은 모임만
+            participations = gatheringParticipantRepository.findMyParticipations(user);
+        }
+        
+        // 중복 제거 및 Gathering으로 변환
+        Set<Gathering> gatherings = new HashSet<>();
+        for (GatheringParticipant participation : participations) {
+            // 모임 상태 확인 (모임이 취소되었는데 includeCanceled가 false라면 제외)
+            Gathering gathering = participation.getGathering();
+            if (!includeCanceled && gathering.getStatus() == GatheringStatus.CANCELED) {
+                continue;
+            }
+            gatherings.add(gathering);
+        }
+        
+        // Gathering을 GatheringSummary로 변환
+        return gatherings.stream()
+                .map(GatheringSummary::of)
+                .collect(Collectors.toList());
     }
 }

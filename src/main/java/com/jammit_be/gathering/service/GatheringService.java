@@ -48,7 +48,6 @@ public class GatheringService {
                 ,request.getThumbnail()
                 ,request.getPlace()
                 ,request.getDescription()
-                ,request.getSong()
                 ,request.getGatheringDateTime()
                 ,request.getRecruitDateTime()
                 ,request.getGenres()
@@ -65,17 +64,19 @@ public class GatheringService {
      * 모임 전체 목록 조회 API
      * @param genres 검색할 음악 장르 리스트
      * @param sessions 모집 파트 리스트
+     * @param includeCanceled 취소된 모임 포함 여부
      * @param pageable 페이징/정렬 정보
      * @return 데이터 + 페이징
      */
     public GatheringListResponse findGatherings(
             List<Genre> genres
             , List<BandSession> sessions
+            , boolean includeCanceled
             , Pageable pageable
     ) {
 
         // 1. DB에서 조건/페이징/정렬에 맞는 Gathering 목록 조회
-        Page<Gathering> page = gatheringRepository.findGatherings(genres, sessions, pageable);
+        Page<Gathering> page = gatheringRepository.findGatherings(genres, sessions, includeCanceled, pageable);
 
         // 2. 각 엔티티를 DTO(GatheringSummary)로 변환
         List<GatheringSummary> summaries = new ArrayList<>();
@@ -148,7 +149,6 @@ public class GatheringService {
         gathering.changeName(request.getName());
         gathering.changePlace(request.getPlace());
         gathering.changeDescription(request.getDescription());
-        gathering.changeSong(request.getSong());
         gathering.changeThumbnail(request.getThumbnail());
         gathering.changeGatheringDateTime(request.getGatheringDateTime());
         gathering.changeRecruitDeadline(request.getRecruitDeadline());
@@ -171,22 +171,21 @@ public class GatheringService {
     }
 
     /**
-     * 모임 삭제
-     * @param id 삭제할 모임 PK
+     * 모임 취소
+     * @param id 취소할 모임 PK
      * @param user 로그인 사용자
      */
     @Transactional
-    public void deleteGathering(Long id, User user) {
+    public void cancelGathering(Long id, User user) {
         Gathering gathering = gatheringRepository.findById(id)
                 .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
 
-
         if (!gathering.getCreatedBy().equals(user)) {
-            throw new AlertException("삭제 권한이 없습니다.");
+            throw new AlertException("취소 권한이 없습니다.");
         }
 
-        gatheringRepository.delete(gathering);
+        // 실제 삭제 대신 상태를 취소로 변경
+        gathering.cancel();
     }
-
 
 }

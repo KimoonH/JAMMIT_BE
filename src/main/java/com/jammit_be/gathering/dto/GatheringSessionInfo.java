@@ -8,7 +8,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class GatheringSessionInfo {
-    @Schema(description = "밴드 세션", example = "VOCAL")
+    @Schema(description = "밴드 세션", example = "KEYBOARD")
     private final BandSession bandSession; // 파트(VOCAL, GUITAR 등)
     @Schema(description = "모집 정원", example = "2")
     private final int recruitCount; // 모집 정원

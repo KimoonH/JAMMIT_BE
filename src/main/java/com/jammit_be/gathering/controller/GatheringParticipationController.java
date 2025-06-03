@@ -1,6 +1,7 @@
 package com.jammit_be.gathering.controller;
 
 import com.jammit_be.common.dto.CommonResponse;
+import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
 import com.jammit_be.gathering.service.GatheringParticipationService;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "모임참가", description = "모임 참여 관련 API")
 @RestController
@@ -134,5 +137,25 @@ public class GatheringParticipationController {
                 .rejectParticipation(gatheringId, participantId, owner);
 
         return CommonResponse.ok(response);
+    }
+
+    @Operation(
+            summary = "내가 신청한 모임 목록 조회 API",
+            description = "로그인한 사용자가 신청한 모임 목록을 조회합니다. 취소된 모임도 조회할 수 있습니다.",
+            parameters = {
+                    @Parameter(name = "includeCanceled", description = "취소된 모임 포함 여부", example = "true")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공"),
+                    @ApiResponse(responseCode = "401", description = "로그인 필요")
+            }
+    )
+    @GetMapping("/my")
+    public CommonResponse<List<GatheringSummary>> getMyParticipations(
+            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
+            @AuthenticationPrincipal User user
+    ) {
+        List<GatheringSummary> myParticipations = gatheringParticipationService.getMyParticipations(user, includeCanceled);
+        return CommonResponse.ok(myParticipations);
     }
 }

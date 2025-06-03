@@ -37,7 +37,7 @@ public class UserResponse {
     private LocalDateTime updatedAt;
     @Schema(description = "선호하는 장르 목록", example = "[\"ROCK_METAL\", \"INDIE\", \"JAZZ\"]")
     private List<Genre> preferredGenres;
-    @Schema(description = "선호하는 밴드 세션 목록", example = "[\"VOCAL\", \"ELECTRIC_GUITAR\", \"BASS\"]")
+    @Schema(description = "선호하는 밴드 세션 목록", example = "[\"VOCAL\", \"ELECTRIC_GUITAR\", \"BASS\", \"KEYBOARD\"]")
     private List<BandSession> preferredBandSessions;
 
     public static UserResponse of(User user) {

@@ -1,8 +1,6 @@
 package com.jammit_be.review.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,12 +17,6 @@ public class CreateReviewRequest {
     @NotNull
     @Schema(description = "모임 ID", example = "1", required = true)
     private Long gatheringId;
-
-    @NotNull
-    @Min(1)
-    @Max(5)
-    @Schema(description = "별점(1~5)", example = "5", minimum = "1", maximum = "5", required = true)
-    private int score;
 
     @Schema(description = "리뷰 내용", example = "함께 연주하기 좋은 사람이었습니다. 다음에도 함께 하고 싶습니다.")
     private String content;

@@ -12,7 +12,7 @@ public class GatheringParticipationResponse {
     private final Long gatheringId; // 참여 신청한 모임의 식별자 PK
     @Schema(description = "유저 아이디 PK", example = "10")
     private final Long userId; // 참여 신청자(유저)의 식별자 PK
-    @Schema(description = "신청 밴드 세션", example = "VOCAL")
+    @Schema(description = "신청 밴드 세션", example = "KEYBOARD")
     private final BandSession bandSession; //신청한 밴드 세션(파트) 종류
     @Schema(description = "승인 여부", example = "false")
     private final boolean approved; // 승인 여부 (주최자 승인 전이면 false)

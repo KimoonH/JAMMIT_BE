@@ -11,6 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class GatheringParticipationRequest {
 
-    @Schema(description = "참여할 밴드 세션", example = "VOCAL")
+    @Schema(description = "참여할 밴드 세션", example = "KEYBOARD", allowableValues = {"VOCAL", "ELECTRIC_GUITAR", "DRUM", "ACOUSTIC_GUITAR", "BASS", "STRING_INSTRUMENT", "PERCUSSION", "KEYBOARD"})
     private BandSession bandSession;
 }
