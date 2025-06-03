@@ -4,7 +4,11 @@ import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringParticipant;
 import com.jammit_be.user.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -13,6 +17,14 @@ public interface GatheringParticipantRepository extends JpaRepository<GatheringP
     boolean existsByUserAndGatheringAndNameAndCanceledFalse(User user, Gathering gathering, BandSession name);
     // 해당 모임, 세션에서 승인된(approved) 인원 수 카운트
     int countByGatheringAndNameAndApprovedTrue(Gathering gathering, BandSession name);
+
+    // 내가 신청한 모임 목록 조회 (페이징 처리)
+    @Query("SELECT gp FROM GatheringParticipant gp JOIN FETCH gp.gathering WHERE gp.user = :user AND gp.canceled = false")
+    Page<GatheringParticipant> findMyParticipations(@Param("user") User user, Pageable pageable);
+
+    // 내가 신청한 모든 모임 목록 조회 (취소된 것 포함, 페이징 처리)
+    @Query("SELECT gp FROM GatheringParticipant gp JOIN FETCH gp.gathering WHERE gp.user = :user")
+    Page<GatheringParticipant> findAllMyParticipations(@Param("user") User user, Pageable pageable);
 
     List<GatheringParticipant> findByGatheringId(Long gatheringId);
 }

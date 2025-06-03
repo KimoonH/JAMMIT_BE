@@ -2,6 +2,7 @@ package com.jammit_be.gathering.entity;
 
 import com.jammit_be.common.entity.BaseUserEntity;
 import com.jammit_be.common.enums.Genre;
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.review.entity.Review;
 import com.jammit_be.user.entity.User;
 import jakarta.persistence.*;
@@ -29,8 +30,6 @@ public class Gathering extends BaseUserEntity {
     private String place; // 모임 장소
     @Column(name = "gathering_description", nullable = false, length = 1000)
     private String description; // 모임 설명
-    @Column(name = "gathering_song", nullable = false, length = 10)
-    private String song; // 곡
     @Column(name = "gathering_thumbnail")
     private String thumbnail; // 이미지
     @Column(name = "gathering_view_count", nullable = false)
@@ -40,6 +39,10 @@ public class Gathering extends BaseUserEntity {
 
     @Column(name = "recruit_deadline", nullable = false)
     private LocalDateTime recruitDeadline; // 모집 마감일
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private GatheringStatus status = GatheringStatus.ACTIVE; // 모임 상태 (기본값: 활성)
     
     // 모임 장르들 (다중 선택 가능)
     @ElementCollection
@@ -94,10 +97,6 @@ public class Gathering extends BaseUserEntity {
         this.description = description;
     }
 
-    public void changeSong(String song) {
-        this.song = song;
-    }
-
     public void changeThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
     }
@@ -110,7 +109,6 @@ public class Gathering extends BaseUserEntity {
         this.recruitDeadline = recruitDeadline;
     }
 
-
     public void changeGenres(Set<Genre> genres) {
         this.genres = new HashSet<>(genres);
     }
@@ -122,12 +120,26 @@ public class Gathering extends BaseUserEntity {
             this.gatheringSessions.add(s);
         }
     }
+    
+    /**
+     * 모임을 취소 상태로 변경합니다.
+     */
+    public void cancel() {
+        this.status = GatheringStatus.CANCELED;
+    }
+    
+    /**
+     * 모임이 활성 상태인지 확인합니다.
+     * @return 활성 상태이면 true
+     */
+    public boolean isActive() {
+        return this.status == GatheringStatus.ACTIVE;
+    }
 
     public static Gathering create(String name
                                 , String thumbnail
                                 , String place
                                 , String description
-                                , String song
                                 , LocalDateTime gatheringDateTime
                                 , LocalDateTime recruitDeadline
                                 , Set<Genre> genres
@@ -141,11 +153,11 @@ public class Gathering extends BaseUserEntity {
         gathering.thumbnail = thumbnail;
         gathering.place = place;
         gathering.description = description;
-        gathering.song = song;
         gathering.gatheringDateTime = gatheringDateTime;
         gathering.recruitDeadline = recruitDeadline;
         gathering.genres.addAll(genres);
         gathering.createdBy = user;
+        gathering.status = GatheringStatus.ACTIVE;
 
         for(GatheringSession session : sessions) {
             session.setGathering(gathering);

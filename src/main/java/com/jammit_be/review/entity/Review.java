@@ -22,8 +22,6 @@ public class Review extends BaseEntity {
     private Long id;
     @Column(nullable = true)
     private String content; // 리뷰 내용 (선택 입력)
-    @Column(nullable = false)
-    private int score; // 별점
 
     // 체크박스 리뷰 옵션
     @Column

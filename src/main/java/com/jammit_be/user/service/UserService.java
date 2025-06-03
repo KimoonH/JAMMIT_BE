@@ -43,14 +43,13 @@ public class UserService {
                 .email(email)
                 .oauthPlatform(OauthPlatform.NONE)
                 .build();
+        
+        // 선호 장르와 선호 밴드 세션 설정
+        user.updatePreferredGenres(createUserRequest.getPreferredGenres());
+        user.updatePreferredBandSessions(createUserRequest.getPreferredBandSessions());
+        
         userRepository.save(user);
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
+        return UserResponse.of(user);
     }
 
     @Transactional

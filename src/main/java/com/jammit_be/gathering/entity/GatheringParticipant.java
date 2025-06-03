@@ -29,18 +29,22 @@ public class GatheringParticipant extends BaseEntity {
     private boolean approved = false;
     @Column(nullable = false)
     private boolean rejected = false;
+    
+    @Column(length = 500)
+    private String introduction;
 
-    private GatheringParticipant(User user, Gathering gathering, BandSession name, boolean approved, boolean canceled, boolean rejected) {
+    private GatheringParticipant(User user, Gathering gathering, BandSession name, boolean approved, boolean canceled, boolean rejected, String introduction) {
         this.user = user;
         this.gathering = gathering;
         this.name = name;
         this.approved = approved;
         this.canceled = canceled;
         this.rejected = rejected;
+        this.introduction = introduction;
     }
 
-    public static GatheringParticipant pending(User user, Gathering gathering, BandSession name) {
-        return new GatheringParticipant(user, gathering, name, false, false, false);
+    public static GatheringParticipant pending(User user, Gathering gathering, BandSession name, String introduction) {
+        return new GatheringParticipant(user, gathering, name, false, false, false, introduction);
     }
 
     public void approve() {

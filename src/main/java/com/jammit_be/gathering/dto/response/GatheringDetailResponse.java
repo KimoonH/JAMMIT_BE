@@ -1,6 +1,7 @@
 package com.jammit_be.gathering.dto.response;
 
 import com.jammit_be.common.enums.Genre;
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.dto.GatheringSessionInfo;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringSession;
@@ -25,14 +26,14 @@ public class GatheringDetailResponse {
     private final String thumbnail;
     @Schema(description = "모임 장소", example = "홍대 합주실")
     private final String place;
-    @Schema(description = "곡", example = "Hi Bully")
-    private final String song;
     @Schema(description = "모임 소개")
     private final String description;
     @Schema(description = "모임 일시")
     private final LocalDateTime gatheringDateTime; // 모임 일시
     @Schema(description = "모집 마감일")
     private final LocalDateTime recruitDeadline; // 마감일
+    @Schema(description = "모임 상태", example = "ACTIVE")
+    private final GatheringStatus status; // 모임 상태
     @ArraySchema(schema = @Schema(implementation = Genre.class))
     private final Set<Genre> genres;
     @ArraySchema(schema = @Schema(implementation = GatheringSessionInfo.class))
@@ -53,9 +54,9 @@ public class GatheringDetailResponse {
                 .place(gathering.getPlace())
                 .thumbnail(gathering.getThumbnail())
                 .description(gathering.getDescription())
-                .song(gathering.getSong())
                 .gatheringDateTime(gathering.getGatheringDateTime())
                 .recruitDeadline(gathering.getRecruitDeadline())
+                .status(gathering.getStatus())
                 .genres(gathering.getGenres())
                 .sessions(sessionInfos)
                 .build();
