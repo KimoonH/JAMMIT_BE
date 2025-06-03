@@ -22,7 +22,9 @@ public class GatheringParticipantSummary {
     private final String userEmail;             // 유저 이메일
     @Schema(description = "신청 파트", example = "GUITAR")
     private final BandSession bandSession;      // 신청 파트
-    @Schema(description = "참가자 상태", example = "PENDING")
+    @Schema(description = "참가자 상태", example = "PENDING", 
+            allowableValues = {"PENDING", "APPROVED", "REJECTED", "COMPLETED", "CANCELED"},
+            implementation = ParticipantStatus.class)
     private final ParticipantStatus status;
     @Schema(description = "신청 일시", example = "2023-01-01T12:00:00")
     private final LocalDateTime createdAt;      // 신청일시

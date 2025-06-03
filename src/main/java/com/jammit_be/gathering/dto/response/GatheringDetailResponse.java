@@ -32,7 +32,9 @@ public class GatheringDetailResponse {
     private final LocalDateTime gatheringDateTime; // 모임 일시
     @Schema(description = "모집 마감일")
     private final LocalDateTime recruitDeadline; // 마감일
-    @Schema(description = "모임 상태", example = "ACTIVE")
+    @Schema(description = "모임 상태", example = "RECRUITING", 
+            allowableValues = {"RECRUITING", "CONFIRMED", "COMPLETED", "CANCELED"},
+            implementation = GatheringStatus.class)
     private final GatheringStatus status; // 모임 상태
     @ArraySchema(schema = @Schema(implementation = Genre.class))
     private final Set<Genre> genres;

@@ -32,7 +32,9 @@ public class GatheringSummary {
     private final int viewCount; // 해당 모임의 조회수
     @Schema(description = "모집 마감일시", example = "2025-06-30T23:59:59")
     private final LocalDateTime recruitDeadline; // 모집 마감 일시(마감일 기준)
-    @Schema(description = "모임 상태", example = "ACTIVE")
+    @Schema(description = "모임 상태", example = "RECRUITING", 
+            allowableValues = {"RECRUITING", "CONFIRMED", "COMPLETED", "CANCELED"},
+            implementation = GatheringStatus.class)
     private final GatheringStatus status; // 모임 상태
 
     public static GatheringSummary of(Gathering gathering) {
