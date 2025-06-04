@@ -11,6 +11,7 @@ import com.jammit_be.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,7 @@ public class UserController {
                     @ApiResponse(responseCode = "400", description = "회원가입 실패")
             }
     )
-    public CommonResponse<UserResponse> register(@RequestBody CreateUserRequest createUserRequest) {
+    public CommonResponse<UserResponse> register(@Valid @RequestBody CreateUserRequest createUserRequest) {
         var response = userService.registerUser(createUserRequest);
         return new CommonResponse<UserResponse>().success(response);
     }

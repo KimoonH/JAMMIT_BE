@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.dto.request;
 
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.enums.Genre;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,6 +30,8 @@ public class GatheringCreateRequest {
     private LocalDateTime recruitDateTime; // 모임 마감 일시
     @ArraySchema(schema = @Schema(implementation = Genre.class))
     private Set<Genre> genres; // 밴드 장르
+    @Schema(description = "모임 상태", example = "RECRUITING")
+    private GatheringStatus status;
     @Schema(description = "총 모집 인원", example = "6")
     private int totalRecruitCount; // 총 모집 인원
     @ArraySchema(schema = @Schema(implementation = GatheringSessionRequest.class))

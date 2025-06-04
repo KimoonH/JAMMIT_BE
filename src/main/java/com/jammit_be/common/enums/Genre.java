@@ -11,8 +11,7 @@ public enum Genre {
     PUNK("펑크"),
     ACOUSTIC("어쿠스틱"),
     FOLK("포크"),
-    RNB("R&B"),
-    KEYBOARD("건반");
+    RNB("R&B");
 
     private final String displayName;
 
