@@ -1,6 +1,7 @@
 package com.jammit_be.gathering.dto;
 
 import com.jammit_be.common.enums.GatheringStatus;
+import com.jammit_be.common.enums.Genre;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringSession;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -36,6 +38,10 @@ public class GatheringSummary {
             allowableValues = {"RECRUITING", "CONFIRMED", "COMPLETED", "CANCELED"},
             implementation = GatheringStatus.class)
     private final GatheringStatus status; // 모임 상태
+    @Schema(description = "모임의 장르 목록", example = "[\"ROCK\", \"JAZZ\"]")
+    private final Set<Genre> genres; // 장르들 추가
+    @Schema(description = "모임 생성자(주최자) 정보")
+    private CreatorInfo creator; // 주최자 정보
 
     public static GatheringSummary of(Gathering gathering) {
         return GatheringSummary.builder()
@@ -49,6 +55,8 @@ public class GatheringSummary {
                 .viewCount(gathering.getViewCount())
                 .recruitDeadline(gathering.getRecruitDeadline())
                 .status(gathering.getStatus())
+                .genres(gathering.getGenres())
+                .creator(CreatorInfo.of(gathering.getCreatedBy()))
                 .build();
     }
 }
