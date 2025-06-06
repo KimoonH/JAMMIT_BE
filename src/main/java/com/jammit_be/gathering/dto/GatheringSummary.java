@@ -9,7 +9,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -42,6 +44,8 @@ public class GatheringSummary {
     private final Set<Genre> genres; // 장르들 추가
     @Schema(description = "모임 생성자(주최자) 정보")
     private CreatorInfo creator; // 주최자 정보
+    @Schema(description = "밴드 세션별 모집 정보")
+    private final List<GatheringSessionInfo> sessions;
 
     public static GatheringSummary of(Gathering gathering) {
         return GatheringSummary.builder()
@@ -57,6 +61,15 @@ public class GatheringSummary {
                 .status(gathering.getStatus())
                 .genres(gathering.getGenres())
                 .creator(CreatorInfo.of(gathering.getCreatedBy()))
+                .sessions(
+                        gathering.getGatheringSessions().stream()
+                                .map(session -> GatheringSessionInfo.builder()
+                                        .bandSession(session.getName())
+                                        .recruitCount(session.getRecruitCount())
+                                        .currentCount(session.getCurrentCount())
+                                        .build()
+                                ).collect(Collectors.toList())
+                )
                 .build();
     }
 }
