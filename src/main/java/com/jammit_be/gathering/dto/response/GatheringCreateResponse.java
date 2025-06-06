@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.dto.response;
 
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.entity.Gathering;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class GatheringCreateResponse {
     private final LocalDateTime gatheringDateTime; // 실제 모임 시간
     private final LocalDateTime recruitDeadline; // 모집 마감일
     private final String thumbnail; // 이미지 URL
+    private final GatheringStatus status; // 모임 상태
 
 
     public static GatheringCreateResponse from(Gathering gathering) {
@@ -26,7 +28,7 @@ public class GatheringCreateResponse {
                 .gatheringDateTime(gathering.getGatheringDateTime())
                 .recruitDeadline(gathering.getRecruitDeadline())
                 .thumbnail(gathering.getThumbnail())
+                .status(gathering.getStatus())
                 .build();
     }
-
 }

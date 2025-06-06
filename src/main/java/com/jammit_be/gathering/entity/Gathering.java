@@ -162,6 +162,9 @@ public class Gathering extends BaseUserEntity {
         return this.status.isJoinable();
     }
 
+    /**
+     * 모임 생성
+     */
     public static Gathering create(String name
                                 , String thumbnail
                                 , String place

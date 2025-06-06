@@ -126,4 +126,9 @@ public class User {
         }
     }
 
+    // 프로필 이미지 변경
+    public void changeProfileImage(String orgFileName, String profileImagePath) {
+        this.orgFileName = orgFileName;
+        this.profileImagePath = profileImagePath;
+    }
 }

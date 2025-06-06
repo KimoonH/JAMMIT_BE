@@ -52,6 +52,7 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
                 .from(gathering)
                 .join(gathering.gatheringSessions, session)
                 .fetchJoin()
+                .join(gathering.createdBy).fetchJoin()
                 .where(builder);
 
 

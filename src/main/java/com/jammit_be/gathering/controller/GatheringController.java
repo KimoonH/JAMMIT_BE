@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +60,11 @@ public class GatheringController {
 
     @Operation(
             summary = "모임 전체 목록 조회 API",
-            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다. (로그인 없이 사용 가능)",
+            description = "음악 장르/세션별 필터, 페이징, 정렬로 모임 리스트를 조회합니다. (로그인 없이 사용 가능)<br>" +
+                    "        <b>정렬 파라미터 사용 예시</b>:<br>\n" +
+                    "        • <code>?sort=viewCount,desc</code><br>\n" +
+                    "        • <code>?sort=recruitDeadline,asc</code><br>\n" +
+                    "        • 여러 정렬 조건: <code>?sort=viewCount,desc&sort=recruitDeadline,asc</code>",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -76,7 +81,7 @@ public class GatheringController {
             @RequestParam(required = false) List<BandSession> sessions,
             @Parameter(description = "취소된 모임 포함 여부", example = "false")
             @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
-            @Parameter(hidden = true) Pageable pageable
+            @ParameterObject Pageable pageable
             ){
 
         return gatheringService.findGatherings(genres, sessions, includeCanceled, pageable);
