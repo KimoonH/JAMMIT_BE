@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -59,7 +60,32 @@ public class UserService {
     public UserResponse updateUserInfo(String email, UpdateUserRequest updateUserRequest) {
         User user = userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new AlertException("유저를 찾지 못하였습니다"));
-        user.modify(updateUserRequest, passwordEncoder);
+        
+        // 기본 정보 업데이트
+        if (updateUserRequest.getEmail() != null) {
+            user.setEmail(updateUserRequest.getEmail());
+        }
+        if (updateUserRequest.getUsername() != null) {
+            user.setUsername(updateUserRequest.getUsername());
+        }
+        if (updateUserRequest.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(updateUserRequest.getPassword()));
+        }
+        
+        // 기존 선호 장르와 밴드 세션을 DB에서 직접 삭제
+        userRepository.deleteAllPreferredGenresByUserId(user.getId());
+        userRepository.deleteAllPreferredBandSessionsByUserId(user.getId());
+        
+        // 새로운 선호 장르와 밴드 세션 추가
+        if (updateUserRequest.getPreferredGenres() != null && !updateUserRequest.getPreferredGenres().isEmpty()) {
+            user.updatePreferredGenres(updateUserRequest.getPreferredGenres());
+        }
+        
+        if (updateUserRequest.getPreferredBandSessions() != null && !updateUserRequest.getPreferredBandSessions().isEmpty()) {
+            user.updatePreferredBandSessions(updateUserRequest.getPreferredBandSessions());
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
         return UserResponse.of(user);
     }
 

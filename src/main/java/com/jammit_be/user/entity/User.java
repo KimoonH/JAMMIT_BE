@@ -19,9 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Setter
 @Getter
@@ -57,11 +55,11 @@ public class User {
 
     // 내가 선택한 곡장르들
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private final List<PreferredGenre> preferredGenres = new ArrayList<>();
+    private final Set<PreferredGenre> preferredGenres = new HashSet<>();
 
     // 내가 선택한 밴드 세션들
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<PreferredBandSession> userBandSessions = new ArrayList<>();
+    private Set<PreferredBandSession> userBandSessions = new HashSet<>();
 
     // 내가 작성한 리뷰들
     @OneToMany(mappedBy = "reviewer")
@@ -118,7 +116,7 @@ public class User {
     }
 
     public void updatePreferredBandSessions(List<BandSession> bandSessions) {
-        this.userBandSessions.clear();
+        this.userBandSessions.clear();;
         if (bandSessions != null && !bandSessions.isEmpty()) {
             for (int i = 0; i < bandSessions.size(); i++) {
                 this.userBandSessions.add(PreferredBandSession.create(this, bandSessions.get(i), i));
