@@ -36,4 +36,8 @@ public class PreferredBandSession extends BaseEntity {
                 .priority(priority)
                 .build();
     }
+    
+    public void updatePriority(Integer priority) {
+        this.priority = priority;
+    }
 }
