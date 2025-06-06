@@ -2,6 +2,7 @@ package com.jammit_be.user.service;
 
 import com.jammit_be.auth.dto.response.EmailCheckResponse;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.storage.FileStorage;
 import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
 import com.jammit_be.user.dto.request.CreateUserRequest;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -22,6 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FileStorage fileStorage;
 
     public UserResponse getUserInfo(String email) {
         var user = userRepository.findUserByEmail(email)
@@ -47,7 +50,7 @@ public class UserService {
         // 선호 장르와 선호 밴드 세션 설정
         user.updatePreferredGenres(createUserRequest.getPreferredGenres());
         user.updatePreferredBandSessions(createUserRequest.getPreferredBandSessions());
-        
+
         userRepository.save(user);
         return UserResponse.of(user);
     }
@@ -70,5 +73,19 @@ public class UserService {
 
     public EmailCheckResponse checkEmailExists(String email) {
         return new EmailCheckResponse(userRepository.existsUserByEmail(email));
+    }
+
+    public String uploadProfileImage(Long userId ,MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AlertException("유저를 찾지 못하였습니다"));
+        
+        if(file == null || file.isEmpty()) {
+            throw new AlertException("파일을 첨부하지 않았습니다.");
+        }
+
+        String url = fileStorage.save(file, "profile");
+        user.changeProfileImage(file.getOriginalFilename(), url);
+
+        return url;
     }
 }

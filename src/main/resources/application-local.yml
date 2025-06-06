@@ -18,6 +18,10 @@ spring:
         format_sql: true
         show_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
 
 logging:
   level:
@@ -39,3 +43,13 @@ server:
   shutdown: graceful
   port: 8083
 
+# S3
+cloud:
+  aws:
+    credentials:
+      access-key: ENC(QtldJ/h2U1UGb0Zfmf2RkggGD08nRsPcQxkSF2+xyhE=)
+      secret-key: ENC(ZtjaK/1Tb791Ju8ay/v5NSMSH5fmupELDujmeestR+BGOSwRLhB0sVtfRMmRmknXwF/zrgmvP58=)
+    region:
+      static: ENC(x6/uuqcHpKqcLwYSWMfOZtRPHXBGSejO)
+    s3:
+      bucket: ENC(5RyziorhkYWj9Zxqxt3Ykg==)

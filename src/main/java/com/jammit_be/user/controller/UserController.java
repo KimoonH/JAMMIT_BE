@@ -9,11 +9,13 @@ import com.jammit_be.user.dto.request.CreateUserRequest;
 import com.jammit_be.user.dto.response.UserResponse;
 import com.jammit_be.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "User", description = "유저 정보 조회 API")
 @RequestMapping("/jammit/user")
@@ -83,5 +85,23 @@ public class UserController {
     )
     public CommonResponse<EmailCheckResponse> checkEmailExists(@RequestParam String email) {
         return new CommonResponse<EmailCheckResponse>().success(userService.checkEmailExists(email));
+    }
+
+    @Operation(
+            summary = "프로필 이미지 업로드",
+            description = "PK로 유저를 지정하고, 프로필 이미지를 파일로 업로드합니다. (multipart/form-data 형식)",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "업로드 성공 (이미지 URL 반환)")
+            }
+    )
+    @PostMapping(value = "/{userId}/profile-image", consumes = "multipart/form-data")
+    public CommonResponse<String> uploadProfileImage(
+            @Parameter(description = "유저의 PK (숫자)", example = "1")
+            @PathVariable Long userId,
+            @Parameter(description = "업로드할 프로필 이미지 파일", required = true)
+            @RequestPart("file") MultipartFile file) {
+
+        String result = userService.uploadProfileImage(userId, file);
+        return new CommonResponse<String>().success(result);
     }
 }
