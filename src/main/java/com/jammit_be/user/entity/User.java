@@ -9,10 +9,7 @@ import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -27,6 +24,32 @@ import java.util.*;
 @NoArgsConstructor
 @Table(name = "user")
 @EntityListeners(AuditingEntityListener.class)
+@EqualsAndHashCode(of = "id")
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = "User.withPreferences",
+        attributeNodes = {
+            @NamedAttributeNode("preferredGenres"),
+            @NamedAttributeNode("userBandSessions")
+        }
+    ),
+    @NamedEntityGraph(
+        name = "User.withReviews",
+        attributeNodes = {
+            @NamedAttributeNode("writtenReviews"),
+            @NamedAttributeNode("receivedReviews")
+        }
+    ),
+    @NamedEntityGraph(
+        name = "User.withAll",
+        attributeNodes = {
+            @NamedAttributeNode("preferredGenres"),
+            @NamedAttributeNode("userBandSessions"),
+            @NamedAttributeNode("writtenReviews"),
+            @NamedAttributeNode("receivedReviews")
+        }
+    )
+})
 public class User {
 
     @Id

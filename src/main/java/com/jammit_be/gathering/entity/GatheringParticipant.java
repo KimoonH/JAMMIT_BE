@@ -11,6 +11,21 @@ import lombok.*;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "gathering_participant")
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = "GatheringParticipant.withUser",
+        attributeNodes = {
+            @NamedAttributeNode("user")
+        }
+    ),
+    @NamedEntityGraph(
+        name = "GatheringParticipant.withUserAndGathering",
+        attributeNodes = {
+            @NamedAttributeNode("user"),
+            @NamedAttributeNode("gathering")
+        }
+    )
+})
 public class GatheringParticipant extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

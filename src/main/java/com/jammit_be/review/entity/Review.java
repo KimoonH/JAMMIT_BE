@@ -15,6 +15,23 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "review")
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = "Review.withUsers",
+        attributeNodes = {
+            @NamedAttributeNode("reviewer"),
+            @NamedAttributeNode("reviewee")
+        }
+    ),
+    @NamedEntityGraph(
+        name = "Review.withUsersAndGathering",
+        attributeNodes = {
+            @NamedAttributeNode("reviewer"),
+            @NamedAttributeNode("reviewee"),
+            @NamedAttributeNode("gathering")
+        }
+    )
+})
 public class Review extends BaseEntity {
 
     @Id
