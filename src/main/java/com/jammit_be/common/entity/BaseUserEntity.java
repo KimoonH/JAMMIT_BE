@@ -12,6 +12,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
+@NamedEntityGraph(
+    name = "BaseUserEntity.withUsers",
+    attributeNodes = {
+        @NamedAttributeNode("createdBy"),
+        @NamedAttributeNode("updatedBy")
+    }
+)
 public class BaseUserEntity extends BaseEntity {
 
   @CreatedBy

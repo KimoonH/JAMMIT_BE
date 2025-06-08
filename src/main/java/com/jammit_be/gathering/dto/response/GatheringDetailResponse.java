@@ -2,6 +2,7 @@ package com.jammit_be.gathering.dto.response;
 
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.enums.GatheringStatus;
+import com.jammit_be.gathering.dto.CreatorInfo;
 import com.jammit_be.gathering.dto.GatheringSessionInfo;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.entity.GatheringSession;
@@ -40,6 +41,8 @@ public class GatheringDetailResponse {
     private final Set<Genre> genres;
     @ArraySchema(schema = @Schema(implementation = GatheringSessionInfo.class))
     private final List<GatheringSessionInfo> sessions; // 세션별 정보
+    @Schema(description = "모임 생성자(주최자) 정보")
+    private final CreatorInfo creator; // 주최자 정보
 
     public static GatheringDetailResponse from(Gathering gathering) {
         List<GatheringSessionInfo> sessionInfos = new ArrayList<>();
@@ -61,6 +64,7 @@ public class GatheringDetailResponse {
                 .status(gathering.getStatus())
                 .genres(gathering.getGenres())
                 .sessions(sessionInfos)
+                .creator(CreatorInfo.of(gathering.getCreatedBy()))
                 .build();
     }
 }

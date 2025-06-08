@@ -19,6 +19,23 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "gathering")
+@NamedEntityGraphs({
+    @NamedEntityGraph(
+        name = "Gathering.withUsers",
+        attributeNodes = {
+            @NamedAttributeNode("createdBy"),
+            @NamedAttributeNode("updatedBy")
+        }
+    ),
+    @NamedEntityGraph(
+        name = "Gathering.withSessionsAndUsers",
+        attributeNodes = {
+            @NamedAttributeNode("gatheringSessions"),
+            @NamedAttributeNode("createdBy"),
+            @NamedAttributeNode("updatedBy")
+        }
+    )
+})
 public class Gathering extends BaseUserEntity {
 
     @Id
