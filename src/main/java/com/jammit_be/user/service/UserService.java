@@ -2,6 +2,7 @@ package com.jammit_be.user.service;
 
 import com.jammit_be.auth.dto.response.EmailCheckResponse;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.repository.GatheringRepository;
 import com.jammit_be.storage.FileStorage;
 import com.jammit_be.user.dto.request.UpdateImageRequest;
 import com.jammit_be.user.dto.request.UpdateUserRequest;
@@ -26,11 +27,33 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileStorage fileStorage;
+    private final GatheringRepository gatheringRepository;
 
     public UserResponse getUserInfo(String email) {
         var user = userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new AlertException("유저를 찾지 못하였습니다"));
-        return UserResponse.of(user);
+        
+        // 유저가 작성한 모임 수와 완료된 모임 수 조회
+        long totalCreatedGatheringCount = gatheringRepository.countByCreatedBy(user);
+        long completedGatheringCount = gatheringRepository.countByCreatedByAndStatusCompleted(user);
+        
+        // UserResponse 생성
+        UserResponse response = UserResponse.of(user);
+        
+        // 필드 설정
+        return UserResponse.builder()
+                .id(response.getId())
+                .username(response.getUsername())
+                .email(response.getEmail())
+                .nickname(response.getNickname())
+                .profileImagePath(response.getProfileImagePath())
+                .createdAt(response.getCreatedAt())
+                .updatedAt(response.getUpdatedAt())
+                .preferredGenres(response.getPreferredGenres())
+                .preferredBandSessions(response.getPreferredBandSessions())
+                .totalCreatedGatheringCount(totalCreatedGatheringCount)
+                .completedGatheringCount(completedGatheringCount)
+                .build();
     }
 
     @Transactional
@@ -53,7 +76,25 @@ public class UserService {
         user.updatePreferredBandSessions(createUserRequest.getPreferredBandSessions());
 
         userRepository.save(user);
-        return UserResponse.of(user);
+        
+        // 새로 등록된 유저는 아직 모임을 생성하지 않았으므로 0으로 설정
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profileImagePath(user.getProfileImagePath())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .preferredGenres(user.getPreferredGenres().stream()
+                        .map(preferredGenre -> preferredGenre.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .preferredBandSessions(user.getUserBandSessions().stream()
+                        .map(preferredBandSession -> preferredBandSession.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .totalCreatedGatheringCount(0L)
+                .completedGatheringCount(0L)
+                .build();
     }
 
     @Transactional
@@ -86,7 +127,28 @@ public class UserService {
         }
         
         user.setUpdatedAt(LocalDateTime.now());
-        return UserResponse.of(user);
+        
+        // 유저가 작성한 모임 수와 완료된 모임 수 조회
+        long totalCreatedGatheringCount = gatheringRepository.countByCreatedBy(user);
+        long completedGatheringCount = gatheringRepository.countByCreatedByAndStatusCompleted(user);
+        
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profileImagePath(user.getProfileImagePath())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .preferredGenres(user.getPreferredGenres().stream()
+                        .map(preferredGenre -> preferredGenre.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .preferredBandSessions(user.getUserBandSessions().stream()
+                        .map(preferredBandSession -> preferredBandSession.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .totalCreatedGatheringCount(totalCreatedGatheringCount)
+                .completedGatheringCount(completedGatheringCount)
+                .build();
     }
 
     @Transactional
@@ -94,7 +156,28 @@ public class UserService {
         User user = userRepository.findUserByEmail(email)
                 .orElseThrow(() -> new AlertException("유저를 찾지 못하였습니다"));
         user.updateProfileImage(updateImageRequest);
-        return UserResponse.of(user);
+        
+        // 유저가 작성한 모임 수와 완료된 모임 수 조회
+        long totalCreatedGatheringCount = gatheringRepository.countByCreatedBy(user);
+        long completedGatheringCount = gatheringRepository.countByCreatedByAndStatusCompleted(user);
+        
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .profileImagePath(user.getProfileImagePath())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .preferredGenres(user.getPreferredGenres().stream()
+                        .map(preferredGenre -> preferredGenre.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .preferredBandSessions(user.getUserBandSessions().stream()
+                        .map(preferredBandSession -> preferredBandSession.getName())
+                        .collect(java.util.stream.Collectors.toList()))
+                .totalCreatedGatheringCount(totalCreatedGatheringCount)
+                .completedGatheringCount(completedGatheringCount)
+                .build();
     }
 
     public EmailCheckResponse checkEmailExists(String email) {

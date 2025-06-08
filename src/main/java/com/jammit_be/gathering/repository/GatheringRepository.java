@@ -34,6 +34,22 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> , Ga
                                     @Param("includeCanceled") boolean includeCanceled,
                                     Pageable pageable);
                                     
+    /**
+     * 사용자가 생성한 모든 모임 수 카운트
+     * @param createdBy 모임 생성자
+     * @return 사용자가 생성한 모든 모임 수
+     */
+    @Query("SELECT COUNT(g) FROM Gathering g WHERE g.createdBy = :createdBy")
+    long countByCreatedBy(@Param("createdBy") User createdBy);
+    
+    /**
+     * 사용자가 생성한 모임 중 COMPLETED 상태인 모임 수 카운트
+     * @param createdBy 모임 생성자
+     * @return 사용자가 생성한 모임 중 COMPLETED 상태인 모임 수
+     */
+    @Query("SELECT COUNT(g) FROM Gathering g WHERE g.createdBy = :createdBy AND g.status = 'COMPLETED'")
+    long countByCreatedByAndStatusCompleted(@Param("createdBy") User createdBy);
+                                    
     @Override
     @EntityGraph(value = "Gathering.withUsers")
     Optional<Gathering> findById(Long id);
