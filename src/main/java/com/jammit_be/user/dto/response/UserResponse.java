@@ -39,6 +39,10 @@ public class UserResponse {
     private List<Genre> preferredGenres;
     @Schema(description = "선호하는 밴드 세션 목록", example = "[\"VOCAL\", \"ELECTRIC_GUITAR\", \"BASS\", \"KEYBOARD\"]")
     private List<BandSession> preferredBandSessions;
+    @Schema(description = "사용자가 작성한 모든 모임 수", example = "5")
+    private Long totalCreatedGatheringCount;
+    @Schema(description = "사용자가 작성한 모임 중 완료된(COMPLETED) 모임 수", example = "3")
+    private Long completedGatheringCount;
 
     public static UserResponse of(User user) {
         return UserResponse.builder()

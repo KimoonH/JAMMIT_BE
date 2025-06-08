@@ -4,6 +4,7 @@ import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.dto.CreatorInfo;
 import com.jammit_be.gathering.dto.GatheringSessionInfo;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringCreateRequest;
@@ -122,8 +123,10 @@ public class GatheringService {
                 .description(gathering.getDescription())
                 .gatheringDateTime(gathering.getGatheringDateTime())
                 .recruitDeadline(gathering.getRecruitDeadline())
+                .status(gathering.getStatus())
                 .genres(gathering.getGenres())
                 .sessions(sessionInfos)
+                .creator(CreatorInfo.of(gathering.getCreatedBy()))
                 .build();
     }
 
