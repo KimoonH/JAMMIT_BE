@@ -16,11 +16,17 @@ import com.jammit_be.review.repository.ReviewRepository;
 import com.jammit_be.user.entity.User;
 import com.jammit_be.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.jammit_be.common.dto.response.PageResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -133,6 +139,30 @@ public class ReviewService {
         return reviewRepository.findAllByRevieweeId(revieweeId).stream()
                 .map(ReviewResponse::of)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 사용자가 받은 리뷰 목록 페이지네이션 조회
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<ReviewResponse> getReviewsByRevieweeWithPagination(int page, int pageSize) {
+        Long revieweeId = AuthUtil.getUserInfo().getId();
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        Page<Review> reviewPage = reviewRepository.findAllByRevieweeId(revieweeId, pageable);
+        
+        List<ReviewResponse> content = reviewPage.getContent().stream()
+                .map(ReviewResponse::of)
+                .collect(Collectors.toList());
+        
+        return PageResponse.<ReviewResponse>builder()
+                .content(content)
+                .page(reviewPage.getNumber())
+                .size(reviewPage.getSize())
+                .totalElements(reviewPage.getTotalElements())
+                .totalPages(reviewPage.getTotalPages())
+                .last(reviewPage.isLast())
+                .build();
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.jammit_be.review.dto.response;
 
+import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.review.entity.Review;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -24,6 +27,9 @@ public class ReviewResponse {
 
     @Schema(description = "리뷰 작성자 닉네임", example = "작성자닉네임")
     private String reviewerNickname;
+    
+    @Schema(description = "리뷰 작성자의 밴드 세션", example = "[\"VOCAL\", \"GUITAR\"]")
+    private List<BandSession> reviewerBandSessions;
 
     @Schema(description = "리뷰 대상자 ID", example = "2")
     private Long revieweeId;
@@ -36,6 +42,12 @@ public class ReviewResponse {
 
     @Schema(description = "모임 이름", example = "락밴드 모임")
     private String gatheringName;
+    
+    @Schema(description = "모임 썸네일", example = "https://example.com/thumbnail.jpg")
+    private String gatheringThumbnail;
+    
+    @Schema(description = "모임 주최자 닉네임", example = "주최자닉네임")
+    private String gatheringHostNickname;
 
     @Schema(description = "리뷰 내용", example = "함께 연주하기 좋은 사람이었습니다. 다음에도 함께 하고 싶습니다.")
     private String content;
@@ -75,10 +87,15 @@ public class ReviewResponse {
                 .id(review.getId())
                 .reviewerId(review.getReviewer().getId())
                 .reviewerNickname(review.getReviewer().getNickname())
+                .reviewerBandSessions(review.getReviewer().getUserBandSessions().stream()
+                        .map(session -> session.getName())
+                        .collect(Collectors.toList()))
                 .revieweeId(review.getReviewee().getId())
                 .revieweeNickname(review.getReviewee().getNickname())
                 .gatheringId(review.getGathering().getId())
                 .gatheringName(review.getGathering().getName())
+                .gatheringThumbnail(review.getGathering().getThumbnail())
+                .gatheringHostNickname(review.getGathering().getCreatedBy().getNickname())
                 .content(review.getContent())
                 .isPracticeHelped(review.isPracticeHelped())
                 .isGoodWithMusic(review.isGoodWithMusic())
