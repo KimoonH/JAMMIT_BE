@@ -1,6 +1,7 @@
 package com.jammit_be.review.controller;
 
 import com.jammit_be.common.dto.CommonResponse;
+import com.jammit_be.common.dto.response.PageResponse;
 import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
 import com.jammit_be.review.dto.response.ReviewStatisticsResponse;
@@ -116,7 +117,7 @@ public class ReviewController {
     @GetMapping("/received")
     @Operation(
             summary = "받은 리뷰 목록 조회 API", 
-            description = "현재 로그인한 사용자가 받은 리뷰 목록을 조회합니다.",
+            description = "현재 로그인한 사용자가 받은 리뷰 목록을 페이지네이션으로 조회합니다.",
             responses = {
                     @ApiResponse(
                             responseCode = "200", 
@@ -126,9 +127,13 @@ public class ReviewController {
                     @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
             }
     )
-    public CommonResponse<List<ReviewResponse>> getReceivedReviews() {
-        var response = reviewService.getReviewsByReviewee();
-        return new CommonResponse<List<ReviewResponse>>().success(response);
+    public CommonResponse<PageResponse<ReviewResponse>> getReceivedReviews(
+            @Parameter(description = "페이지 번호 (0부터 시작)", example = "0") 
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "8") 
+            @RequestParam(required = false, defaultValue = "8") int pageSize) {
+        var response = reviewService.getReviewsByRevieweeWithPagination(page, pageSize);
+        return new CommonResponse<PageResponse<ReviewResponse>>().success(response);
     }
 
     @GetMapping("/received/statistics")
