@@ -1,6 +1,8 @@
 package com.jammit_be.review.repository;
 
 import com.jammit_be.review.entity.Review;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +22,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @EntityGraph(value = "Review.withUsers")
     @Query("SELECT r FROM Review r WHERE r.reviewee.id = :userId")
     List<Review> findAllByRevieweeId(@Param("userId") Long userId);
+
+    @EntityGraph(value = "Review.withUsersAndGathering")
+    @Query("SELECT r FROM Review r WHERE r.reviewee.id = :userId")
+    Page<Review> findAllByRevieweeId(@Param("userId") Long userId, Pageable pageable);
 
     @EntityGraph(value = "Review.withUsersAndGathering")
     @Query("SELECT r FROM Review r WHERE r.gathering.id = :gatheringId")
