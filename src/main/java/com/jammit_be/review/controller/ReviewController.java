@@ -5,6 +5,7 @@ import com.jammit_be.common.dto.response.PageResponse;
 import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
 import com.jammit_be.review.dto.response.ReviewStatisticsResponse;
+import com.jammit_be.review.dto.response.ReviewUserPageResponse;
 import com.jammit_be.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -176,5 +177,70 @@ public class ReviewController {
             @PathVariable Long gatheringId) {
         var response = reviewService.getReviewsByGathering(gatheringId);
         return new CommonResponse<List<ReviewResponse>>().success(response);
+    }
+
+
+    @Operation(
+            summary = "모임 참가자의 통합 리뷰·통계·프로필 조회 API",
+            description = """
+        특정 모임(gatheringId) 내에서 참가자(userId)가 받은 모든 리뷰 목록,
+        리뷰 평가 통계, 참가자 프로필 정보를 주최자만 한 번에 조회합니다.
+        """,
+            parameters = {
+                    @Parameter(name = "gatheringId", description = "조회할 모임 ID", required = true, example = "1"),
+                    @Parameter(name = "userId", description = "조회할 참가자 유저 ID", required = true, example = "2")
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "참가자 통합 리뷰 정보 조회 성공",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ReviewUserPageResponse.class),
+                                    examples = @ExampleObject(
+                                            name = "성공 예시",
+                                            value = """
+                    {
+                      "userInfo": {
+                        "id": 2,
+                        "nickname": "참가자닉네임",
+                        "profileImagePath": "2024/01/11/uuid-profile.jpg",
+                        "preferredGenres": ["ROCK", "JAZZ"],
+                        "preferredBandSessions": ["VOCAL"]
+                      },
+                      "statistics": {
+                        "totalReviews": 10,
+                        "practiceHelpedCount": 7,
+                        "practiceHelpedPercentage": 70.0,
+                        "goodWithMusicCount": 6,
+                        "goodWithMusicPercentage": 60.0
+                        // ... 이하 생략
+                      },
+                      "reviews": [
+                        {
+                          "id": 101,
+                          "reviewerId": 1,
+                          "reviewerNickname": "리뷰작성자",
+                          "content": "연주 정말 잘해요!",
+                          "createdAt": "2024-06-15T19:22:00",
+                          // ... 이하 생략
+                        }
+                        // ... 이하 생략
+                      ]
+                    }
+                    """
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+                    @ApiResponse(responseCode = "403", description = "주최자가 아닐 경우 권한 없음"),
+                    @ApiResponse(responseCode = "404", description = "모임 또는 유저를 찾을 수 없음")
+            }
+    )
+    @GetMapping("/{gatheringId}/participants/{userId}/reviews")
+    public ReviewUserPageResponse getReviewUserPage(
+            @PathVariable Long gatheringId,
+            @PathVariable Long userId) {
+        return reviewService.getReviewUserPage(userId, gatheringId);
     }
 } 

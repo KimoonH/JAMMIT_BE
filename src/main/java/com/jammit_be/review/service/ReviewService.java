@@ -2,17 +2,17 @@ package com.jammit_be.review.service;
 
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.GatheringStatus;
-import com.jammit_be.common.enums.ParticipantStatus;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.entity.Gathering;
-import com.jammit_be.gathering.entity.GatheringParticipant;
 import com.jammit_be.gathering.repository.GatheringParticipantRepository;
 import com.jammit_be.gathering.repository.GatheringRepository;
 import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
 import com.jammit_be.review.dto.response.ReviewStatisticsResponse;
+import com.jammit_be.review.dto.response.ReviewUserPageResponse;
 import com.jammit_be.review.entity.Review;
 import com.jammit_be.review.repository.ReviewRepository;
+import com.jammit_be.user.dto.response.UserResponse;
 import com.jammit_be.user.entity.User;
 import com.jammit_be.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -252,5 +253,45 @@ public class ReviewService {
      */
     private double calculatePercentage(int count, int total) {
         return Math.round((double) count / total * 1000) / 10.0;
+    }
+
+    /**
+     * 특정 모임의 주최자가 해당 모임 참가자의 리뷰 통합 정보를 조회
+     * @param userId 리뷰/통계를 조회할 대상 참가자의 유저 ID
+     * @param gatheringId 해당 모임의 PK (주최자 권한 체크 용도)
+     * @return  대상 유저의 프로필, 리뷰 통계, 리뷰 목록을 포함한 통합 응답 DTO
+     */
+    @Transactional(readOnly = true)
+    public ReviewUserPageResponse getReviewUserPage(Long userId, Long gatheringId) {
+        // 모임, 주최자, 참가자 조회
+        Gathering gathering = gatheringRepository.findById(gatheringId)
+                .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AlertException("유저를 찾을 수 없습니다."));
+
+        // 주최자 권한 체크
+        User owner = AuthUtil.getUserInfo();
+        if(!gathering.getCreatedBy().getId().equals(owner.getId())) {
+            throw new AlertException("모임 주최자만 접근할 수 있습니다.");
+        }
+
+        // 유저 정보 생성
+        UserResponse userInfo = UserResponse.of(targetUser);
+
+        // 리뷰 리스트
+        List<Review> reviews = reviewRepository.findAllByRevieweeId(userId);
+        List<ReviewResponse> reviewResponses = new ArrayList<>();
+        for (Review review : reviews) {
+            reviewResponses.add(ReviewResponse.of(review));
+        }
+
+        ReviewStatisticsResponse reviewStatistics = ReviewStatisticsResponse.of(reviews);
+
+        return ReviewUserPageResponse.builder()
+                .userInfo(userInfo)
+                .statistics(reviewStatistics)
+                .reviews(reviewResponses)
+                .build();
     }
 } 
