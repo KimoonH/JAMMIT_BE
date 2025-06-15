@@ -1,10 +1,13 @@
 package com.jammit_be.review.dto.response;
 
+import com.jammit_be.review.entity.Review;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Getter
 @Builder
@@ -64,4 +67,62 @@ public class ReviewStatisticsResponse {
     
     @Schema(description = "합주 시간 약속을 잘 지켜요 백분율", example = "93.3")
     private double keepingPromisesPercentage;
+
+    public static ReviewStatisticsResponse of(List<Review> reviews) {
+        int totalReviews = reviews.size();
+        if (totalReviews == 0) {
+            return ReviewStatisticsResponse.builder()
+                    .totalReviews(0)
+                    .practiceHelpedCount(0)
+                    .goodWithMusicCount(0)
+                    .goodWithOthersCount(0)
+                    .sharesPracticeResourcesCount(0)
+                    .managingWellCount(0)
+                    .helpfulCount(0)
+                    .goodLearnerCount(0)
+                    .keepingPromisesCount(0)
+                    .practiceHelpedPercentage(0)
+                    .goodWithMusicPercentage(0)
+                    .goodWithOthersPercentage(0)
+                    .sharesPracticeResourcesPercentage(0)
+                    .managingWellPercentage(0)
+                    .helpfulPercentage(0)
+                    .goodLearnerPercentage(0)
+                    .keepingPromisesPercentage(0)
+                    .build();
+        }
+
+        int practiceHelpedCount = (int) reviews.stream().filter(Review::isPracticeHelped).count();
+        int goodWithMusicCount = (int) reviews.stream().filter(Review::isGoodWithMusic).count();
+        int goodWithOthersCount = (int) reviews.stream().filter(Review::isGoodWithOthers).count();
+        int sharesPracticeResourcesCount = (int) reviews.stream().filter(Review::isSharesPracticeResources).count();
+        int managingWellCount = (int) reviews.stream().filter(Review::isManagingWell).count();
+        int helpfulCount = (int) reviews.stream().filter(Review::isHelpful).count();
+        int goodLearnerCount = (int) reviews.stream().filter(Review::isGoodLearner).count();
+        int keepingPromisesCount = (int) reviews.stream().filter(Review::isKeepingPromises).count();
+
+        return ReviewStatisticsResponse.builder()
+                .totalReviews(totalReviews)
+                .practiceHelpedCount(practiceHelpedCount)
+                .goodWithMusicCount(goodWithMusicCount)
+                .goodWithOthersCount(goodWithOthersCount)
+                .sharesPracticeResourcesCount(sharesPracticeResourcesCount)
+                .managingWellCount(managingWellCount)
+                .helpfulCount(helpfulCount)
+                .goodLearnerCount(goodLearnerCount)
+                .keepingPromisesCount(keepingPromisesCount)
+                .practiceHelpedPercentage(calcPercent(practiceHelpedCount, totalReviews))
+                .goodWithMusicPercentage(calcPercent(goodWithMusicCount, totalReviews))
+                .goodWithOthersPercentage(calcPercent(goodWithOthersCount, totalReviews))
+                .sharesPracticeResourcesPercentage(calcPercent(sharesPracticeResourcesCount, totalReviews))
+                .managingWellPercentage(calcPercent(managingWellCount, totalReviews))
+                .helpfulPercentage(calcPercent(helpfulCount, totalReviews))
+                .goodLearnerPercentage(calcPercent(goodLearnerCount, totalReviews))
+                .keepingPromisesPercentage(calcPercent(keepingPromisesCount, totalReviews))
+                .build();
+    }
+
+    private static double calcPercent(int count, int total) {
+        return total == 0 ? 0.0 : Math.round(((double) count / total) * 1000) / 10.0;
+    }
 } 
