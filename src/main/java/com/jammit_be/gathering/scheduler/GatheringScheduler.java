@@ -44,10 +44,10 @@ public class GatheringScheduler {
     }
 
     /**
-     * 이전 작업 완료 후 30초 뒤에 실행되어 모집 마감일이 지난 모임들을 취소 처리합니다.
+     * 애플리케이션 시작 시 즉시 실행되고, 이후 이전 작업 완료 후 30초 뒤에 실행되어 모집 마감일이 지난 모임들을 취소 처리합니다.
      * RECRUITING 상태인 모임 중 recruitDeadline이 지났는데 모든 세션이 모집되지 않은 모임을 CANCELED 상태로 변경합니다.
      */
-    @Scheduled(fixedDelay = 30000) // 이전 작업 완료 후 30초 뒤 실행
+    @Scheduled(fixedDelay = 30000, initialDelay = 0) // 애플리케이션 시작 시 즉시 실행, 이후 이전 작업 완료 후 30초 뒤 실행
     @Transactional
     public void cancelIncompleteGatherings() {
         log.info("미완료 모임 취소 처리 스케줄러 실행 시작");
