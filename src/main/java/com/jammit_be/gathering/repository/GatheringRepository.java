@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,4 +58,40 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> , Ga
     @Override
     @EntityGraph(value = "Gathering.withUsers")
     List<Gathering> findAll();
+
+    /**
+     * 전날에 시작된 CONFIRMED 상태의 모임들을 조회합니다.
+     * @param startDateTime 조회 시작 시간 (전날 00:00:00)
+     * @param endDateTime 조회 종료 시간 (오늘 00:00:00)
+     * @return 전날에 시작된 CONFIRMED 상태의 모임 목록
+     */
+    @Query("SELECT g FROM Gathering g WHERE g.status = 'CONFIRMED' " +
+           "AND g.gatheringDateTime >= :startDateTime " +
+           "AND g.gatheringDateTime < :endDateTime")
+    List<Gathering> findConfirmedGatheringsBetweenDates(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * 모집 마감일이 지난 RECRUITING 상태의 모임들을 조회합니다.
+     * @param currentTime 현재 시간
+     * @return 모집 마감일이 지난 RECRUITING 상태의 모임 목록
+     */
+    @Query("SELECT g FROM Gathering g WHERE g.status = 'RECRUITING' " +
+           "AND g.recruitDeadline < :currentTime")
+    List<Gathering> findRecruitingGatheringsAfterDeadline(@Param("currentTime") LocalDateTime currentTime);
+
+    /**
+     * 모집 마감일이 지나고 모든 세션이 모집되지 않은 RECRUITING 상태의 모임들을 조회합니다.
+     * @param currentTime 현재 시간
+     * @return 모집 마감일이 지나고 모든 세션이 모집되지 않은 RECRUITING 상태의 모임 목록
+     */
+    @EntityGraph(value = "Gathering.withSessionsAndUsers")
+    @Query("SELECT g FROM Gathering g " +
+           "WHERE g.status = 'RECRUITING' " +
+           "AND g.recruitDeadline < :currentTime " +
+           "AND EXISTS (SELECT 1 FROM GatheringSession s " +
+           "           WHERE s.gathering = g " +
+           "           AND s.currentCount < s.recruitCount)")
+    List<Gathering> findIncompleteGatheringsAfterDeadline(@Param("currentTime") LocalDateTime currentTime);
 }
