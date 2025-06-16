@@ -328,12 +328,11 @@ public class GatheringParticipationService {
 
     /**
      * 내가 신청한 모임 목록 조회 API
-     * @param includeCanceled 취소된 모임 포함 여부
      * @param pageable 페이징 정보
      * @return 내가 신청한 모임 목록과 페이징 정보
      */
     @Transactional(readOnly = true)
-    public GatheringListResponse getMyParticipations(boolean includeCanceled, Pageable pageable) {
+    public GatheringListResponse getMyParticipations(Pageable pageable) {
         User user = AuthUtil.getUserInfo();
 
         Page<GatheringParticipant> participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);

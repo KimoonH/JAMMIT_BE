@@ -179,10 +179,9 @@ public class GatheringParticipationController {
     )
     @GetMapping("/my")
     public CommonResponse<GatheringListResponse> getMyParticipations(
-            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
             @Parameter(hidden = true) Pageable pageable
     ) {
-        GatheringListResponse myParticipations = gatheringParticipationService.getMyParticipations(includeCanceled, pageable);
+        GatheringListResponse myParticipations = gatheringParticipationService.getMyParticipations(pageable);
         return CommonResponse.ok(myParticipations);
     }
 }
