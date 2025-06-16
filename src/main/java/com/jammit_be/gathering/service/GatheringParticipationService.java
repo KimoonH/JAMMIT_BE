@@ -335,24 +335,14 @@ public class GatheringParticipationService {
     @Transactional(readOnly = true)
     public GatheringListResponse getMyParticipations(boolean includeCanceled, Pageable pageable) {
         User user = AuthUtil.getUserInfo();
-        Page<GatheringParticipant> participationsPage;
 
-        if (includeCanceled) {
-            // 취소된 것 포함 모든 모임
-            participationsPage = gatheringParticipantRepository.findAllMyParticipations(user, pageable);
-        } else {
-            // 취소되지 않은 모임만
-            participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
-        }
+        Page<GatheringParticipant> participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
 
         // 페이지 내용 처리
         Set<Gathering> gatherings = new HashSet<>();
         for (GatheringParticipant participation : participationsPage.getContent()) {
             // 모임 상태 확인 (모임이 취소되었는데 includeCanceled가 false라면 제외)
             Gathering gathering = participation.getGathering();
-            if (!includeCanceled && gathering.getStatus() == GatheringStatus.CANCELED) {
-                continue;
-            }
             gatherings.add(gathering);
         }
 
