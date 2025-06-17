@@ -256,7 +256,7 @@ public class GatheringParticipationService {
                 ,participant.getName()
         );
     }
-    
+
     /**
      * 모임 완료 처리 API - 실제 합주가 완료되었고, 리뷰 작성이 가능하도록 모임 및 모든 승인된 참가자를 완료 상태로 변경
      * @param gatheringId 모임 ID
@@ -265,24 +265,24 @@ public class GatheringParticipationService {
     @Transactional
     public boolean completeGathering(Long gatheringId) {
         User owner = AuthUtil.getUserInfo();
-        
+
         // 모임 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
-                
+
         // 권한 체크
         if (!gathering.getCreatedBy().equals(owner)) {
             throw new AlertException("모임 주최자만 완료 처리할 수 있습니다.");
         }
-        
+
         // 모임 상태 체크 - 모집이 완료된 상태(CONFIRMED)에서만 완료 처리 가능
         if (gathering.getStatus() != GatheringStatus.CONFIRMED) {
             throw new AlertException("멤버 모집이 완료된 모임만 완료 처리할 수 있습니다.");
         }
-        
+
         // 모임 완료 처리 (참가자도 함께 참여 완료 상태로 변경됨)
         gathering.complete();
-        
+
         return true;
     }
 
@@ -308,14 +308,15 @@ public class GatheringParticipationService {
         for(GatheringParticipant participant : participants) {
             var user = participant.getUser();
             summaries.add(GatheringParticipantSummary.builder()
-                            .participantId(participant.getId())
-                            .userId(user.getId())
-                            .userEmail(user.getEmail())
-                            .userNickname(user.getNickname())
-                            .bandSession(participant.getName())
-                            .status(participant.getStatus())
-                            .createdAt(participant.getCreatedAt())
-                            .introduction(participant.getIntroduction())
+                    .participantId(participant.getId())
+                    .userId(user.getId())
+                    .userEmail(user.getEmail())
+                    .userNickname(user.getNickname())
+                    .userProfileImagePath(user.getProfileImagePath()) // 추가
+                    .bandSession(participant.getName())
+                    .status(participant.getStatus())
+                    .createdAt(participant.getCreatedAt())
+                    .introduction(participant.getIntroduction())
                     .build());
         }
 
@@ -349,7 +350,7 @@ public class GatheringParticipationService {
         List<GatheringSummary> summaries = gatherings.stream()
                 .map(GatheringSummary::of)
                 .collect(Collectors.toList());
-                
+
         // 페이징 정보와 함께 응답 객체 생성
         return GatheringListResponse.builder()
                 .gatherings(summaries)

@@ -30,5 +30,6 @@ public class GatheringParticipantSummary {
     private final LocalDateTime createdAt;      // 신청일시
     @Schema(description = "참여자 소개 문구", example = "안녕하세요! 기타 연주자입니다.")
     private final String introduction;          // 참여자 소개 문구
-    
+    @Schema(description = "유저 프로필 이미지", example = "2024/01/11/uuid-profile.jpg")
+    private final String userProfileImagePath;
 }
