@@ -7,6 +7,8 @@ import com.jammit_be.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Builder
+@AllArgsConstructor
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -93,5 +95,14 @@ public class GatheringParticipant extends BaseEntity {
 
     public boolean isCompleted() {
         return this.status == ParticipantStatus.COMPLETED;
+    }
+
+    // 주최자(Host) 생성만 허용하는 팩토리 메서드
+    public static GatheringParticipant createHostParticipant(User user, Gathering gathering) {
+        GatheringParticipant gp = new GatheringParticipant();
+        gp.user = user;
+        gp.gathering = gathering;
+        gp.status = ParticipantStatus.COMPLETED; // 주최자는 바로 완료로 처리
+        return gp;
     }
 }
