@@ -120,12 +120,14 @@ public class GatheringParticipationService {
         if (participant.isCompleted()) {
             return GatheringParticipationResponse.fail("이미 참여 완료된 모임은 취소할 수 없습니다.");
         }
-        
+
+        boolean wasApproved = participant.isApproved(); // 취소 전 상태 체크
+
         // 취소
         participant.cancel();
         
         // 승인된 상태였다면 세션 카운트 감소
-        if (participant.getStatus() == ParticipantStatus.APPROVED) {
+        if (wasApproved) {
             // 세션 찾기
             Gathering gathering = participant.getGathering();
             for (GatheringSession session : gathering.getGatheringSessions()) {
