@@ -61,4 +61,12 @@ public class CommonResponse<T> {
                 .build();
     }
 
+    public static <T> CommonResponse<T> fail(int code, String message, T result) {
+        return CommonResponse.<T>builder()
+                .success(false)
+                .code(code)
+                .message(message)
+                .result(result)
+                .build();
+    }
 }

@@ -14,7 +14,9 @@ import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
 import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.entity.Gathering;
+import com.jammit_be.gathering.entity.GatheringParticipant;
 import com.jammit_be.gathering.entity.GatheringSession;
+import com.jammit_be.gathering.repository.GatheringParticipantRepository;
 import com.jammit_be.gathering.repository.GatheringRepository;
 import com.jammit_be.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ import java.util.List;
 public class GatheringService {
 
     private final GatheringRepository gatheringRepository;
+    private final GatheringParticipantRepository gatheringParticipantRepository;
 
     /**
      * 모임 등록 API
@@ -57,6 +60,11 @@ public class GatheringService {
         );
 
         Gathering saved = gatheringRepository.save(gathering);
+
+        // 주최자 참여자로 저장
+        GatheringParticipant hostParticipant = GatheringParticipant.createHostParticipant(user, saved);
+        gatheringParticipantRepository.save(hostParticipant);
+
 
         return GatheringCreateResponse.from(saved);
     }

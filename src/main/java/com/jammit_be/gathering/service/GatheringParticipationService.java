@@ -7,6 +7,7 @@ import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.CompletedGatheringResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
@@ -120,12 +121,14 @@ public class GatheringParticipationService {
         if (participant.isCompleted()) {
             return GatheringParticipationResponse.fail("이미 참여 완료된 모임은 취소할 수 없습니다.");
         }
-        
+
+        boolean wasApproved = participant.isApproved(); // 취소 전 상태 체크
+
         // 취소
         participant.cancel();
         
         // 승인된 상태였다면 세션 카운트 감소
-        if (participant.getStatus() == ParticipantStatus.APPROVED) {
+        if (wasApproved) {
             // 세션 찾기
             Gathering gathering = participant.getGathering();
             for (GatheringSession session : gathering.getGatheringSessions()) {
@@ -256,7 +259,7 @@ public class GatheringParticipationService {
                 ,participant.getName()
         );
     }
-    
+
     /**
      * 모임 완료 처리 API - 실제 합주가 완료되었고, 리뷰 작성이 가능하도록 모임 및 모든 승인된 참가자를 완료 상태로 변경
      * @param gatheringId 모임 ID
@@ -265,24 +268,24 @@ public class GatheringParticipationService {
     @Transactional
     public boolean completeGathering(Long gatheringId) {
         User owner = AuthUtil.getUserInfo();
-        
+
         // 모임 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
-                
+
         // 권한 체크
         if (!gathering.getCreatedBy().equals(owner)) {
             throw new AlertException("모임 주최자만 완료 처리할 수 있습니다.");
         }
-        
+
         // 모임 상태 체크 - 모집이 완료된 상태(CONFIRMED)에서만 완료 처리 가능
         if (gathering.getStatus() != GatheringStatus.CONFIRMED) {
             throw new AlertException("멤버 모집이 완료된 모임만 완료 처리할 수 있습니다.");
         }
-        
+
         // 모임 완료 처리 (참가자도 함께 참여 완료 상태로 변경됨)
         gathering.complete();
-        
+
         return true;
     }
 
@@ -308,14 +311,15 @@ public class GatheringParticipationService {
         for(GatheringParticipant participant : participants) {
             var user = participant.getUser();
             summaries.add(GatheringParticipantSummary.builder()
-                            .participantId(participant.getId())
-                            .userId(user.getId())
-                            .userEmail(user.getEmail())
-                            .userNickname(user.getNickname())
-                            .bandSession(participant.getName())
-                            .status(participant.getStatus())
-                            .createdAt(participant.getCreatedAt())
-                            .introduction(participant.getIntroduction())
+                    .participantId(participant.getId())
+                    .userId(user.getId())
+                    .userEmail(user.getEmail())
+                    .userNickname(user.getNickname())
+                    .userProfileImagePath(user.getProfileImagePath()) // 추가
+                    .bandSession(participant.getName())
+                    .status(participant.getStatus())
+                    .createdAt(participant.getCreatedAt())
+                    .introduction(participant.getIntroduction())
                     .build());
         }
 
@@ -328,31 +332,20 @@ public class GatheringParticipationService {
 
     /**
      * 내가 신청한 모임 목록 조회 API
-     * @param includeCanceled 취소된 모임 포함 여부
      * @param pageable 페이징 정보
      * @return 내가 신청한 모임 목록과 페이징 정보
      */
     @Transactional(readOnly = true)
-    public GatheringListResponse getMyParticipations(boolean includeCanceled, Pageable pageable) {
+    public GatheringListResponse getMyParticipations(Pageable pageable) {
         User user = AuthUtil.getUserInfo();
-        Page<GatheringParticipant> participationsPage;
 
-        if (includeCanceled) {
-            // 취소된 것 포함 모든 모임
-            participationsPage = gatheringParticipantRepository.findAllMyParticipations(user, pageable);
-        } else {
-            // 취소되지 않은 모임만
-            participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
-        }
+        Page<GatheringParticipant> participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
 
         // 페이지 내용 처리
         Set<Gathering> gatherings = new HashSet<>();
         for (GatheringParticipant participation : participationsPage.getContent()) {
             // 모임 상태 확인 (모임이 취소되었는데 includeCanceled가 false라면 제외)
             Gathering gathering = participation.getGathering();
-            if (!includeCanceled && gathering.getStatus() == GatheringStatus.CANCELED) {
-                continue;
-            }
             gatherings.add(gathering);
         }
 
@@ -360,7 +353,7 @@ public class GatheringParticipationService {
         List<GatheringSummary> summaries = gatherings.stream()
                 .map(GatheringSummary::of)
                 .collect(Collectors.toList());
-                
+
         // 페이징 정보와 함께 응답 객체 생성
         return GatheringListResponse.builder()
                 .gatherings(summaries)
@@ -368,5 +361,10 @@ public class GatheringParticipationService {
                 .totalPage(participationsPage.getTotalPages())
                 .totalElements(participationsPage.getTotalElements())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompletedGatheringResponse> getMyCompletedGatherings(User user) {
+        return gatheringParticipantRepository.findCompletedGatheringsByUser(user);
     }
 }

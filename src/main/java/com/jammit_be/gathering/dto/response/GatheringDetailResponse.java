@@ -44,6 +44,7 @@ public class GatheringDetailResponse {
     @Schema(description = "모임 생성자(주최자) 정보")
     private final CreatorInfo creator; // 주최자 정보
 
+
     public static GatheringDetailResponse from(Gathering gathering) {
         List<GatheringSessionInfo> sessionInfos = new ArrayList<>();
         for (GatheringSession s : gathering.getGatheringSessions()) {

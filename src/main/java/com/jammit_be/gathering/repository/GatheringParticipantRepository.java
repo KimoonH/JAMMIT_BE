@@ -15,7 +15,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface GatheringParticipantRepository extends JpaRepository<GatheringParticipant, Long> {
+public interface GatheringParticipantRepository extends JpaRepository<GatheringParticipant, Long>, GatheringParticipantRepositoryCustom {
     // 이미 참여한 기록이 있는지(중복 신청 방지)
     boolean existsByUserAndGatheringAndNameAndStatusNot(User user, Gathering gathering, BandSession name, ParticipantStatus status);
     
