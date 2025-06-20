@@ -3,7 +3,6 @@ package com.jammit_be.gathering.service;
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
-import com.jammit_be.common.enums.ParticipantStatus;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.CreatorInfo;
 import com.jammit_be.gathering.dto.GatheringSessionInfo;

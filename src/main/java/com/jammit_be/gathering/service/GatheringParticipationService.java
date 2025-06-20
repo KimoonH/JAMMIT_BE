@@ -7,6 +7,7 @@ import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.CompletedGatheringResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
@@ -360,5 +361,10 @@ public class GatheringParticipationService {
                 .totalPage(participationsPage.getTotalPages())
                 .totalElements(participationsPage.getTotalElements())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompletedGatheringResponse> getMyCompletedGatherings(User user) {
+        return gatheringParticipantRepository.findCompletedGatheringsByUser(user);
     }
 }

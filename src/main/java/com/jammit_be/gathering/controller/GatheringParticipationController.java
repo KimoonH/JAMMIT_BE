@@ -4,6 +4,7 @@ import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
+import com.jammit_be.gathering.dto.response.CompletedGatheringResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
@@ -11,6 +12,7 @@ import com.jammit_be.gathering.service.GatheringParticipationService;
 import com.jammit_be.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -184,4 +186,28 @@ public class GatheringParticipationController {
         GatheringListResponse myParticipations = gatheringParticipationService.getMyParticipations(pageable);
         return CommonResponse.ok(myParticipations);
     }
+
+    @Operation(
+            summary = "참여 완료 + 모임 완료 상태인 모임 목록 조회",
+            description = "로그인한 사용자가 참여 완료한 모임 중, 모임 상태가 COMPLETED인 모임 목록을 조회합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "조회 성공",
+                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CompletedGatheringResponse.class)))
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증 필요 (토큰 없음 또는 만료됨)"),
+                    @ApiResponse(responseCode = "403", description = "접근 권한 없음")
+            }
+    )
+    @GetMapping("/my/completed")
+    public CommonResponse<List<CompletedGatheringResponse>> getMyCompletedGatherings(
+            @AuthenticationPrincipal User currentUser
+    ) {
+        List<CompletedGatheringResponse> response =
+                gatheringParticipationService.getMyCompletedGatherings(currentUser);
+
+        return CommonResponse.ok(response);
+    }
+
 }
