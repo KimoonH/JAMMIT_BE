@@ -79,12 +79,10 @@ public class GatheringController {
             @RequestParam(required = false) List<Genre> genres,
             @Parameter(description = "모집 세션(예: VOCAL, DRUM, KEYBOARD 등). 복수 선택 가능", example = "VOCAL")
             @RequestParam(required = false) List<BandSession> sessions,
-            @Parameter(description = "취소된 모임 포함 여부", example = "false")
-            @RequestParam(required = false, defaultValue = "false") boolean includeCanceled,
             @ParameterObject Pageable pageable
             ){
 
-        return gatheringService.findGatherings(genres, sessions, includeCanceled, pageable);
+        return gatheringService.findGatherings(genres, sessions, pageable);
     }
 
     @Operation(

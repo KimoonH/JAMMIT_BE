@@ -25,7 +25,7 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Gathering> findGatherings(List<Genre> genres, List<BandSession> sessions, boolean includeCanceled, Pageable pageable) {
+    public Page<Gathering> findGatherings(List<Genre> genres, List<BandSession> sessions, Pageable pageable) {
         // 1. Q타입 생성
         QGathering gathering = QGathering.gathering;
         QGatheringSession session = QGatheringSession.gatheringSession;
@@ -33,17 +33,13 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
         // 2. BooleanBuilder로 동적 where 조건 구성 (장르/세션)
         BooleanBuilder builder = new BooleanBuilder();
 
+        builder.and(gathering.status.eq(GatheringStatus.RECRUITING));
+
         if (genres != null && !genres.isEmpty()) {
             builder.and(gathering.genres.any().in(genres));
         }
         if (sessions != null && !sessions.isEmpty()) {
             builder.and(session.name.in(sessions));
-        }
-        
-        // 취소된 모임 필터링
-        if (!includeCanceled) {
-            // 취소되지 않은 모든 상태 포함 (RECRUITING, CONFIRMED, COMPLETED)
-            builder.and(gathering.status.ne(GatheringStatus.CANCELED));
         }
 
         // 3. 실제 데이터 쿼리 생성

@@ -3,6 +3,7 @@ package com.jammit_be.review.service;
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.gathering.repository.GatheringParticipantRepository;
 import com.jammit_be.gathering.repository.GatheringRepository;
@@ -25,9 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.jammit_be.common.dto.response.PageResponse;
+import com.jammit_be.review.dto.response.UnwrittenReviewProjection;
+import com.jammit_be.review.dto.response.UnwrittenReviewListResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -293,5 +297,40 @@ public class ReviewService {
                 .statistics(reviewStatistics)
                 .reviews(reviewResponses)
                 .build();
+    }
+
+    /**
+     * 내가 참여한 COMPLETED 모임들 중, 각 모임별로 내가 리뷰를 작성하지 않은 참가자 목록 반환 (쿼리 기반)
+     */
+    @Transactional(readOnly = true)
+    public List<UnwrittenReviewListResponse> getUnwrittenReviewList() {
+        User me = AuthUtil.getUserInfo();
+        List<UnwrittenReviewProjection> projections = gatheringParticipantRepository.findUnwrittenReviewsByUser(me);
+        // 모임별로 그룹핑
+        Map<Long, List<UnwrittenReviewProjection>> grouped = projections.stream()
+                .collect(Collectors.groupingBy(UnwrittenReviewProjection::getGatheringId));
+        List<UnwrittenReviewListResponse> result = new ArrayList<>();
+        for (Map.Entry<Long, List<UnwrittenReviewProjection>> entry : grouped.entrySet()) {
+            List<GatheringParticipantSummary> participants = entry.getValue().stream()
+                    .map(p -> GatheringParticipantSummary.builder()
+                            .participantId(p.getParticipantId())
+                            .userId(p.getUserId())
+                            .userNickname(p.getUserNickname())
+                            .userEmail(p.getUserEmail())
+                            .bandSession(com.jammit_be.common.enums.BandSession.valueOf(p.getBandSession()))
+                            .status(com.jammit_be.common.enums.ParticipantStatus.valueOf(p.getStatus()))
+                            .createdAt(p.getCreatedAt())
+                            .introduction(p.getIntroduction())
+                            .build())
+                    .collect(Collectors.toList());
+            UnwrittenReviewProjection first = entry.getValue().get(0);
+            result.add(new UnwrittenReviewListResponse(
+                    first.getGatheringId(),
+                    first.getGatheringName(),
+                    first.getGatheringThumbnail(),
+                    participants
+            ));
+        }
+        return result;
     }
 } 

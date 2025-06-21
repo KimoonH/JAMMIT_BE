@@ -6,6 +6,7 @@ import com.jammit_be.review.dto.request.CreateReviewRequest;
 import com.jammit_be.review.dto.response.ReviewResponse;
 import com.jammit_be.review.dto.response.ReviewStatisticsResponse;
 import com.jammit_be.review.dto.response.ReviewUserPageResponse;
+import com.jammit_be.review.dto.response.UnwrittenReviewListResponse;
 import com.jammit_be.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -242,5 +243,23 @@ public class ReviewController {
             @PathVariable Long gatheringId,
             @PathVariable Long userId) {
         return reviewService.getReviewUserPage(userId, gatheringId);
+    }
+
+    @GetMapping("/unwritten")
+    @Operation(
+            summary = "내가 리뷰를 작성하지 않은 참가자 목록 조회 API",
+            description = "내가 참여한 COMPLETED 모임들 중, 각 모임별로 내가 리뷰를 작성하지 않은 참가자 목록을 반환합니다.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "리뷰 미작성자 목록 조회 성공",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+            }
+    )
+    public CommonResponse<List<UnwrittenReviewListResponse>> getUnwrittenReviewList() {
+        var response = reviewService.getUnwrittenReviewList();
+        return new CommonResponse<List<UnwrittenReviewListResponse>>().success(response);
     }
 } 
