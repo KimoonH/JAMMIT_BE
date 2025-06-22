@@ -64,4 +64,37 @@ public interface GatheringParticipantRepository extends JpaRepository<GatheringP
     @Override
     @EntityGraph(value = "GatheringParticipant.withUser")
     List<GatheringParticipant> findAll();
+
+    // 내가 COMPLETED 상태로 참여한 모임 목록 조회
+    @EntityGraph(value = "GatheringParticipant.withUserAndGathering")
+    @Query("SELECT gp FROM GatheringParticipant gp WHERE gp.user = :user AND gp.status = com.jammit_be.common.enums.ParticipantStatus.COMPLETED")
+    List<GatheringParticipant> findCompletedParticipationsByUser(@Param("user") User user);
+
+    // 내가 리뷰를 작성하지 않은 참가자만 Projection으로 조회
+    @Query("""
+    SELECT 
+      g.id as gatheringId,
+      g.name as gatheringName,
+      g.thumbnail as gatheringThumbnail,
+      p.id as participantId,
+      u.id as userId,
+      u.nickname as userNickname,
+      u.email as userEmail,
+      p.name as bandSession,
+      p.status as status,
+      p.createdAt as createdAt,
+      p.introduction as introduction
+    FROM GatheringParticipant gp
+    JOIN gp.gathering g
+    JOIN GatheringParticipant p ON p.gathering = g
+    JOIN p.user u
+    LEFT JOIN Review r ON r.gathering = g AND r.reviewer = :me AND r.reviewee = u
+    WHERE gp.user = :me
+      AND gp.status = com.jammit_be.common.enums.ParticipantStatus.COMPLETED
+      AND g.status = com.jammit_be.common.enums.GatheringStatus.COMPLETED
+      AND p.status = com.jammit_be.common.enums.ParticipantStatus.COMPLETED
+      AND p.user <> :me
+      AND r.id IS NULL
+    """)
+    java.util.List<com.jammit_be.review.dto.response.UnwrittenReviewProjection> findUnwrittenReviewsByUser(@Param("me") com.jammit_be.user.entity.User me);
 }
