@@ -1,10 +1,8 @@
 package com.jammit_be.gathering.controller;
 
-import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.dto.CommonResponse;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
-import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringCreateRequest;
 import com.jammit_be.gathering.dto.request.GatheringUpdateRequest;
 import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
@@ -12,7 +10,6 @@ import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
 import com.jammit_be.gathering.service.GatheringService;
 import com.jammit_be.gathering.service.GatheringParticipationService;
-import com.jammit_be.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,7 +19,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,26 +33,6 @@ public class GatheringController {
     private final GatheringService gatheringService;
     private final GatheringParticipationService gatheringParticipationService;
 
-    @Operation(
-            summary = "모임 등록 API", description = "새로운 모임을 생성한다."
-            ,responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "모임 등록 성공"
-                    )
-                    ,@ApiResponse(
-                    responseCode = "400",
-                    description = "입력값 오류, 등록 실패")
-                    ,@ApiResponse(
-                    responseCode = "403",
-                    description = "권한 없음(로그인 필요)")
-            }
-    )
-    @PostMapping
-    public CommonResponse<GatheringCreateResponse> createGathering(@RequestBody GatheringCreateRequest request) {
-        GatheringCreateResponse response = gatheringService.createGathering(request);
-        return CommonResponse.ok(response);
-    }
 
     @Operation(
             summary = "모임 전체 목록 조회 API",
@@ -80,10 +56,32 @@ public class GatheringController {
             @Parameter(description = "모집 세션(예: VOCAL, DRUM, KEYBOARD 등). 복수 선택 가능", example = "VOCAL")
             @RequestParam(required = false) List<BandSession> sessions,
             @ParameterObject Pageable pageable
-            ){
+    ){
 
         return gatheringService.findGatherings(genres, sessions, pageable);
     }
+
+    @Operation(
+            summary = "모임 등록 API", description = "새로운 모임을 생성한다."
+            ,responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "모임 등록 성공"
+                    )
+                    ,@ApiResponse(
+                    responseCode = "400",
+                    description = "입력값 오류, 등록 실패")
+                    ,@ApiResponse(
+                    responseCode = "403",
+                    description = "권한 없음(로그인 필요)")
+            }
+    )
+    @PostMapping
+    public CommonResponse<GatheringCreateResponse> createGathering(@RequestBody GatheringCreateRequest request) {
+        GatheringCreateResponse response = gatheringService.createGathering(request);
+        return CommonResponse.ok(response);
+    }
+
 
     @Operation(
             summary = "모임 상세 조회 API",

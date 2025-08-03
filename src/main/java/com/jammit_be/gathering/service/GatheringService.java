@@ -2,6 +2,7 @@ package com.jammit_be.gathering.service;
 
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.CreatorInfo;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -206,10 +208,9 @@ public class GatheringService {
     @Transactional(readOnly = true)
     public GatheringListResponse getMyCreatedGatherings(boolean includeCanceled, Pageable pageable) {
         User user = AuthUtil.getUserInfo();
-        // 사용자가 생성한 모임 목록 조회 (페이징 처리)
+
         Page<Gathering> gatheringPage = gatheringRepository.findByCreatedBy(user, includeCanceled, pageable);
-        
-        // 엔티티를 DTO로 변환
+
         List<GatheringSummary> summaries = gatheringPage.getContent().stream()
                 .map(GatheringSummary::of)
                 .toList();

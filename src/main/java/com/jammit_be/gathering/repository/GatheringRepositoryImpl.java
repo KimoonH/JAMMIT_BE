@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.jammit_be.gathering.entity.QGathering.gathering;
@@ -26,70 +27,152 @@ public class GatheringRepositoryImpl implements GatheringRepositoryCustom{
 
     @Override
     public Page<Gathering> findGatherings(List<Genre> genres, List<BandSession> sessions, Pageable pageable) {
-        // 1. Q타입 생성
+
         QGathering gathering = QGathering.gathering;
         QGatheringSession session = QGatheringSession.gatheringSession;
 
-        // 2. BooleanBuilder로 동적 where 조건 구성 (장르/세션)
-        BooleanBuilder builder = new BooleanBuilder();
+        BooleanBuilder whereConditions = buildWhereConditions(genres, sessions, gathering, session);
 
-        builder.and(gathering.status.eq(GatheringStatus.RECRUITING));
+        List<Long> gatheringIds = getGatheringIds(gathering, session, whereConditions, pageable);
 
-        if (genres != null && !genres.isEmpty()) {
-            builder.and(gathering.genres.any().in(genres));
-        }
-        if (sessions != null && !sessions.isEmpty()) {
-            builder.and(session.name.in(sessions));
+        if (gatheringIds.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
 
-        // 3. 실제 데이터 쿼리 생성
-        JPQLQuery<Gathering> query = queryFactory
-                .selectDistinct(gathering)
+        List<Gathering> content = getGatheringsByIds(gathering, gatheringIds, pageable);
+
+        long total = getTotalCount(gathering, session,  whereConditions);
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+
+    /**
+     * 조건에 맞는 ID만 조회 (DB 레벨 페이징)
+     */
+    private List<Long> getGatheringIds(QGathering gathering, QGatheringSession session,
+                                       BooleanBuilder whereConditions, Pageable pageable) {
+
+        JPQLQuery<Long> query = queryFactory
+                .select(gathering.id)
                 .from(gathering)
                 .join(gathering.gatheringSessions, session)
-                .fetchJoin()
-                .where(builder);
+                .where(whereConditions);
 
+        // 정렬 적용
+        applyOrderByForIds(query, gathering, pageable);
 
-        // 4. 정렬 조건 처리
+        return query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+    }
+
+    /**
+     * ID 기반으로 FetchJoin 실행
+     */
+    private List<Gathering> getGatheringsByIds(QGathering gathering, List<Long> gatheringIds, Pageable pageable) {
+
+        JPQLQuery<Gathering> query = queryFactory
+                .selectFrom(gathering)
+                .leftJoin(gathering.gatheringSessions).fetchJoin()
+                .leftJoin(gathering.genres).fetchJoin()
+                .where(gathering.id.in(gatheringIds));
+
+        // 정렬 적용 (결과 순서 보장)
+        applyOrderBy(query, gathering, pageable);
+
+        return query.fetch();
+    }
+
+    /**
+     * ID 조회용 정렬 적용
+     */
+    private void applyOrderByForIds(JPQLQuery<Long> query, QGathering gathering, Pageable pageable) {
         boolean orderApplied = false;
-        for(Sort.Order order : pageable.getSort()) {
+
+        for (Sort.Order order : pageable.getSort()) {
             switch (order.getProperty()) {
                 case "viewCount":
-                    query.orderBy(order.isAscending() ? gathering.viewCount.asc() : gathering.viewCount.desc());
+                    query.orderBy(order.isAscending() ?
+                            gathering.viewCount.asc() : gathering.viewCount.desc());
                     orderApplied = true;
                     break;
                 case "recruitDeadline":
-                    query.orderBy(order.isAscending() ? gathering.recruitDeadline.asc() : gathering.recruitDeadline.desc());
+                    query.orderBy(order.isAscending() ?
+                            gathering.recruitDeadline.asc() : gathering.recruitDeadline.desc());
                     orderApplied = true;
                     break;
             }
         }
 
         if (!orderApplied) {
-            // 기본 정렬: 마감일 오름차순
             query.orderBy(gathering.recruitDeadline.asc());
         }
-
-        // 5. 페이징(페이지 번호, 페이지 크기) 및 결과 데이터 조회
-        List<Gathering> content = query
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
+    }
 
 
-        // 6. 전체 개수 조회 (total count)
-        // → 페이징/정렬 옵션은 필요 없으므로 새로 쿼리!
+    /**
+     * 전체 개수 조회
+     */
+    private long getTotalCount(QGathering gathering, QGatheringSession session, BooleanBuilder whereConditions) {
         Long total = queryFactory
                 .select(gathering.countDistinct())
                 .from(gathering)
                 .join(gathering.gatheringSessions, session)
-                .where(builder)
+                .where(whereConditions)
                 .fetchOne();
 
-        //NullPointerException 방지
-        long safeTotal = (total != null) ? total : 0L;
+        return total != null ? total : 0L;
+    }
 
-        return new PageImpl<>(content, pageable, safeTotal);
+
+    /**
+     * FetchJoin 쿼리용 정렬 적용
+     */
+    private void applyOrderBy(JPQLQuery<Gathering> query, QGathering gathering, Pageable pageable) {
+        boolean orderApplied = false;
+
+        for (Sort.Order order : pageable.getSort()) {
+            switch (order.getProperty()) {
+                case "viewCount":
+                    query.orderBy(order.isAscending() ?
+                            gathering.viewCount.asc() : gathering.viewCount.desc());
+                    orderApplied = true;
+                    break;
+                case "recruitDeadline":
+                    query.orderBy(order.isAscending() ?
+                            gathering.recruitDeadline.asc() : gathering.recruitDeadline.desc());
+                    orderApplied = true;
+                    break;
+            }
+        }
+
+        if (!orderApplied) {
+            query.orderBy(gathering.recruitDeadline.asc());
+        }
+    }
+
+
+    /**
+     * WHERE 조건 빌딩
+     */
+    private BooleanBuilder buildWhereConditions(List<Genre> genres, List<BandSession> sessions,
+                                                QGathering gathering, QGatheringSession session) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(gathering.status.eq(GatheringStatus.RECRUITING));
+
+        if (isNotEmpty(genres)) {
+            builder.and(gathering.genres.any().in(genres));
+        }
+        if (isNotEmpty(sessions)) {
+            builder.and(session.name.in(sessions));
+        }
+
+        return builder;
+    }
+
+    private boolean isNotEmpty(List<?> list) {
+        return list != null && !list.isEmpty();
     }
 }

@@ -1,5 +1,6 @@
 package com.jammit_be.gathering.repository;
 
+import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.user.entity.User;
 import org.springframework.data.domain.Page;
