@@ -71,6 +71,14 @@ dependencies {
 
     // SMTP
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    testImplementation 'com.h2database:h2'
+
+    // 동시성 테스트용 (Spring Boot 3.4.5 호환)
+    testImplementation 'org.awaitility:awaitility:4.2.1'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.7'
+    testImplementation 'org.testcontainers:mysql:1.19.7'
+    testImplementation 'net.jodah:concurrentunit:0.4.6'
 }
 
 tasks.named('test') {

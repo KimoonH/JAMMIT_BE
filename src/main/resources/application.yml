@@ -5,7 +5,7 @@ spring:
     timeout-per-shutdown-phase: 120
 
   datasource:
-    url: jdbc:mysql://${RDS_ENDPOINT:localhost}:3398/JAMMIT?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true
+    url: jdbc:mysql://${RDS_ENDPOINT:localhost}:3306/testdb?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ENC(bg0prA1bnIDQkx9szMJ9hw==)
     password: ENC(hlH6JnmtxTsmDdI0mTsUojCnHm68Cawl)

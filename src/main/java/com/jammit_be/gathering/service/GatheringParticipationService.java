@@ -1,6 +1,7 @@
 package com.jammit_be.gathering.service;
 
 import com.jammit_be.auth.util.AuthUtil;
+import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.enums.ParticipantStatus;
 import com.jammit_be.common.exception.AlertException;
@@ -31,6 +32,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.jammit_be.gathering.constants.GatheringConstants.ErrorMessage.*;
+
+
 @Service
 @RequiredArgsConstructor
 public class GatheringParticipationService {
@@ -39,7 +43,7 @@ public class GatheringParticipationService {
     private final GatheringParticipantRepository gatheringParticipantRepository;
 
     /**
-     * 모임 참여 API
+     * 모임 참여 API (참여자가 하는 행위들)
      * @param gatheringId 어떤 모임
      * @param request 어떤 밴드 세션
      * @return 참여 결과 응답
@@ -47,38 +51,12 @@ public class GatheringParticipationService {
     @Transactional
     public GatheringParticipationResponse participate(Long gatheringId, GatheringParticipationRequest request) {
         var user = AuthUtil.getUserInfo();
+
         // 1. 모임 조회 및 존재 검증 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException("존재하지 않는 모임입니다."));
-                
-        // 1.1 모임이 참가 가능한 상태인지 확인
-        if (!gathering.isJoinable()) {
-            return GatheringParticipationResponse.fail("참가 신청이 불가능한 모임 상태입니다.");
-        }
+                .orElseThrow(() -> new AlertException(GATHERING_NOT_FOUND));
 
-        // 2. 이미 해당 세션에 신청한 기록이 있는지 체크 (중복 방지)
-        boolean alreadyExists = gatheringParticipantRepository.existsActiveParticipation(user, gathering, request.getBandSession());
-        if (alreadyExists) {
-            return GatheringParticipationResponse.fail("이미 해당 파트로 신청한 이력이 있습니다.");
-        }
-
-        // 3. 밴드 세션별 모집 현황 확인 (정원 초과 방지)
-        GatheringSession session = null;
-        for (GatheringSession s : gathering.getGatheringSessions()) {
-            if (s.getName() == request.getBandSession()) {
-                session = s;
-                break;
-            }
-        }
-        if (session == null) {
-            throw new AlertException("모집 중인 세션이 아닙니다.");
-        }
-
-        // 4. 해당 세션의 승인된 인원 수(모집 정원 초과 방지)
-        int approvedCount = gatheringParticipantRepository.countApproved(gathering, request.getBandSession());
-        if (approvedCount >= session.getRecruitCount()) {
-            return GatheringParticipationResponse.fail("해당 세션의 모집 인원이 이미 마감되었습니다.");
-        }
+        validateParticipation(user,gathering, request.getBandSession());
 
         // 5. GatheringParticipant(참가자) 엔티티 생성 및 저장 (대기 상태)
         GatheringParticipant participant = GatheringParticipant.pending(user, gathering, request.getBandSession(), request.getIntroduction());
@@ -92,8 +70,28 @@ public class GatheringParticipationService {
         );
     }
 
+    private void validateParticipation(User user, Gathering gathering, BandSession bandSession) {
+        // 모임이 참가 가능한 상태인지 확인
+        if (!gathering.isJoinable()) {
+            throw new AlertException(GATHERING_NOT_JOINABLE);
+        }
+        // 중복 신청 체크
+        boolean alreadyExists = gatheringParticipantRepository.existsActiveParticipation(user, gathering, bandSession);
+        if (alreadyExists) {
+            throw new AlertException(ALREADY_APPLIED_FOR_SESSION);
+        }
+
+        // 정원 초과 체크
+        GatheringSession session = gathering.getSession(bandSession);
+        int approvedCount = gatheringParticipantRepository.countApproved(gathering, bandSession);
+        if (approvedCount >= session.getRecruitCount()) {
+            throw new AlertException(SESSION_RECRUITMENT_FULL);
+        }
+    }
+
+
     /**
-     * 모임 참여 취소 API
+     * 모임 참여 취소 API (참여자가 하는 행위들)
      * @param gatheringId 모임 아이디 PK
      * @param participantId 참가자 아이디 PK
      * @return 취소 결과 응답
@@ -106,44 +104,75 @@ public class GatheringParticipationService {
         // 1. 참가 엔티티 조회
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
-                
-        // 본인 확인
-        if (!participant.getUser().equals(user)) {
-            throw new AlertException("본인의 참가 신청만 취소할 수 있습니다.");
-        }
-        
-        // 이미 취소된 경우
-        if (participant.isCanceled()) {
-            return GatheringParticipationResponse.fail("이미 취소된 참가 신청입니다.");
-        }
-        
-        // 이미 참여 완료된 경우
-        if (participant.isCompleted()) {
-            return GatheringParticipationResponse.fail("이미 참여 완료된 모임은 취소할 수 없습니다.");
-        }
 
-        boolean wasApproved = participant.isApproved(); // 취소 전 상태 체크
+        validateCancellation(gatheringId, user, participant);
 
-        // 취소
+        //상태 체크 & 취소
+        boolean wasApproved = participant.isApproved();
         participant.cancel();
-        
+
         // 승인된 상태였다면 세션 카운트 감소
-        if (wasApproved) {
-            // 세션 찾기
-            Gathering gathering = participant.getGathering();
-            for (GatheringSession session : gathering.getGatheringSessions()) {
-                if (session.getName() == participant.getName()) {
-                    session.decrementCurrentCount();
-                    break;
-                }
-            }
-        }
+        handleSessionCountDecrementIfNeeded(participant, wasApproved);
         
         return GatheringParticipationResponse.canceled(gatheringId, user.getId(), participant.getName());
     }
 
+    private void handleSessionCountDecrementIfNeeded(GatheringParticipant participant, boolean wasApproved) {
+        if (!wasApproved) {
+            return; // 승인되지 않았던 상태면 카운트 변경 불필요
+        }
+
+        Gathering gathering = participant.getGathering();
+        GatheringSession targetSession = gathering.getSession(participant.getName());
+        targetSession.decrementCurrentCount();
+
+        // 모임 상태 재평가
+        reevaluateGatheringStatusAfterCancellation(gathering);
+
+    }
+
+    // 모임 상태 재평가 메서드
+    private void reevaluateGatheringStatusAfterCancellation(Gathering gathering) {
+
+        // CONFIRMED 상태일 때만 재평가 필요
+        if (gathering.getStatus() != GatheringStatus.CONFIRMED) {
+            return;
+        }
+
+        // 모든 세션이 여전히 꽉 차있는지 확인
+        boolean allBandSessionsFilled = gathering.isAllBandSessionFilled();
+
+        // 빈 자리가 생겼다면 다시 모집 상태로 변경
+        if (!allBandSessionsFilled) {
+            gathering.startRecruiting(); // CONFIRMED → RECRUITING
+        }
+    }
+
+    // 검증 메서드 추출
+    private void validateCancellation(Long gatheringId ,User user, GatheringParticipant participant) {
+        // 모임 일치 여부 확인 (첫 번째로 추가)
+        if (!participant.getGathering().getId().equals(gatheringId)) {
+            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+        }
+
+        // 본인 확인
+        if (!participant.getUser().equals(user)) {
+            throw new AlertException("본인의 참가 신청만 취소할 수 있습니다.");
+        }
+
+        // 이미 취소된 경우
+        if (participant.isCanceled()) {
+            throw new AlertException("이미 취소된 참가 신청입니다.");
+        }
+
+        // 이미 참여 완료된 경우
+        if (participant.isCompleted()) {
+            throw new AlertException("이미 참여 완료된 모임은 취소할 수 없습니다.");
+        }
+    }
+
     /**
-     * 주최자 승인 처리 API
+     * 주최자 승인 처리 API (주최자가 하는 행위들)
      * @param gatheringId 모임 ID
      * @param participantId 참가자 ID
      * @return 승인 결과 응답
@@ -153,7 +182,7 @@ public class GatheringParticipationService {
         User owner = AuthUtil.getUserInfo();
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
+                .orElseThrow(() -> new AlertException(GATHERING_NOT_FOUND));
 
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
@@ -177,13 +206,7 @@ public class GatheringParticipationService {
         }
 
         // 4. 정원 인원 체크
-        GatheringSession targetSession = null;
-        for(GatheringSession s : gathering.getGatheringSessions()) {
-            if(s.getName() == participant.getName()) {
-                targetSession = s;
-                break;
-            }
-        }
+        GatheringSession targetSession = gathering.getSession(participant.getName());
 
         if(targetSession == null) {
             throw new AlertException("밴드 세션 정보를 찾을 수 없습니다.");
@@ -220,7 +243,7 @@ public class GatheringParticipationService {
     }
 
     /**
-     * 주최자 참가자 모임 거절 처리
+     * 주최자 참가자 모임 거절 처리(주최자가 하는 행위들)
      * @param gatheringId 모임 ID
      * @param participantId 참가자 ID
      * @return 거절 결과 응답
@@ -261,7 +284,7 @@ public class GatheringParticipationService {
     }
 
     /**
-     * 모임 완료 처리 API - 실제 합주가 완료되었고, 리뷰 작성이 가능하도록 모임 및 모든 승인된 참가자를 완료 상태로 변경
+     * 모임 완료 처리 API (주최자가 하는 행위들)
      * @param gatheringId 모임 ID
      * @return 처리 결과
      */

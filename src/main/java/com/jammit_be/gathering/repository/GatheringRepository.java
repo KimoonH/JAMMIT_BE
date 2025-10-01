@@ -17,6 +17,7 @@ import java.util.Optional;
 
 @Repository
 public interface GatheringRepository extends JpaRepository<Gathering, Long> , GatheringRepositoryCustom {
+
     @EntityGraph(value = "Gathering.withSessionsAndUsers")
     @Query("select g from Gathering g where g.id = :id")
     Optional<Gathering> findByIdWithSessions(@Param("id") Long id);

@@ -1,8 +1,10 @@
 package com.jammit_be.gathering.entity;
 
 import com.jammit_be.common.entity.BaseUserEntity;
+import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import com.jammit_be.common.enums.GatheringStatus;
+import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.review.entity.Review;
 import com.jammit_be.user.entity.User;
 import jakarta.persistence.*;
@@ -213,4 +215,24 @@ public class Gathering extends BaseUserEntity {
 
         return gathering;
     }
+    
+    public GatheringSession getSession(BandSession bandSession) {
+        return this.gatheringSessions.stream()
+                .filter(session -> session.getName() == bandSession)
+                .findFirst()
+                .orElseThrow(() -> new AlertException("모집 중인 세션이 아닙니다."));
+    }
+
+    // 기존 confirm() 메서드와 대칭
+    public void startRecruiting() {
+        if (this.status == GatheringStatus.CONFIRMED) {
+            this.status = GatheringStatus.RECRUITING;
+        }
+    }
+
+    public boolean isAllBandSessionFilled() {
+        return gatheringSessions.stream()
+                .allMatch(bandsession -> bandsession.getCurrentCount() >= bandsession.getRecruitCount());
+    }
+
 }

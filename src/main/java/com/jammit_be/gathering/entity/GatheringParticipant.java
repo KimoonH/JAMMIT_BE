@@ -38,6 +38,7 @@ public class GatheringParticipant extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id")
     private Gathering gathering;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "band_session_name", nullable = false)
     private BandSession name;
