@@ -265,22 +265,10 @@ public class GatheringParticipationService {
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
 
-        // 3. 주최자 권한 체크
-        if (!gathering.getCreatedBy().equals(owner)) {
-            throw new AlertException("모임 주최자만 처리할 수 있습니다.");
-        }
+        // 2. 검증
+        validateRejectionRequest(gatheringId, owner, gathering, participant);
 
-        // 4. 이미 승인/취소/거절된 신청은 거절 불가
-        if (participant.isApproved()) {
-            return GatheringParticipationResponse.fail("이미 승인된 신청입니다.");
-        }
-        if (participant.isCanceled()) {
-            return GatheringParticipationResponse.fail("이미 취소된 신청입니다.");
-        }
-        if (participant.isRejected()) {
-            return GatheringParticipationResponse.fail("이미 거절된 신청입니다.");
-        }
-        // 5. 거절 처리
+        // 3. 거절 처리
         participant.reject();
 
         return GatheringParticipationResponse.rejected(
@@ -290,37 +278,63 @@ public class GatheringParticipationService {
         );
     }
 
+    private void validateRejectionRequest(Long gatheringId, User owner, Gathering gathering, GatheringParticipant participant) {
+        // gatheringId 일치 확인
+        if (!participant.getGathering().getId().equals(gatheringId)) {
+            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+        }
+
+        // 주최자 권한 확인
+        if (!gathering.getCreatedBy().equals(owner)) {
+            throw new AlertException("모임 주최자만 처리할 수 있습니다.");
+        }
+
+        // 상태 검증
+        if (participant.isApproved()) {
+            throw new AlertException("이미 승인된 신청입니다.");
+        }
+
+        if (participant.isCanceled()) {
+            throw new AlertException("이미 취소된 신청입니다.");
+        }
+
+        if (participant.isRejected()) {
+            throw new AlertException("이미 거절된 신청입니다.");
+        }
+    }
+
     /**
      * 모임 완료 처리 API (주최자가 하는 행위들)
      * @param gatheringId 모임 ID
-     * @return 처리 결과
      */
     @Transactional
-    public boolean completeGathering(Long gatheringId) {
+    public void completeGathering(Long gatheringId) {
         User owner = AuthUtil.getUserInfo();
 
         // 모임 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
 
-        // 권한 체크
+        validateCompletionRequest(owner, gathering);
+
+        // 모임 완료 처리 (참가자도 함께 참여 완료 상태로 변경됨)
+        gathering.complete();
+    }
+
+    private void validateCompletionRequest(User owner, Gathering gathering) {
+        // 주최자 권한 확인
         if (!gathering.getCreatedBy().equals(owner)) {
             throw new AlertException("모임 주최자만 완료 처리할 수 있습니다.");
         }
 
-        // 모임 상태 체크 - 모집이 완료된 상태(CONFIRMED)에서만 완료 처리 가능
+        // 모임 상태 확인
         if (gathering.getStatus() != GatheringStatus.CONFIRMED) {
             throw new AlertException("멤버 모집이 완료된 모임만 완료 처리할 수 있습니다.");
         }
-
-        // 모임 완료 처리 (참가자도 함께 참여 완료 상태로 변경됨)
-        gathering.complete();
-
-        return true;
     }
 
     /**
-     * 참가자 목록 조회
+     * 참가자 목록 조회 API
      * @param gatheringId 모임 아이디 PK
      * @return 모임에 참가된 목록
      */
@@ -330,28 +344,24 @@ public class GatheringParticipationService {
         List<GatheringParticipant> participants = gatheringParticipantRepository.findByGatheringId(gatheringId);
 
         // 2. DTO 변환
-        List<GatheringParticipantSummary> summaries = new ArrayList<>();
-        // 참가자 없으면 빈 객체 반환
-        if(participants.isEmpty()) {
-            return GatheringParticipantListResponse.builder()
-                    .participants(Collections.emptyList())
-                    .total(0)
-                    .build();
-        }
-        for(GatheringParticipant participant : participants) {
-            var user = participant.getUser();
-            summaries.add(GatheringParticipantSummary.builder()
-                    .participantId(participant.getId())
-                    .userId(user.getId())
-                    .userEmail(user.getEmail())
-                    .userNickname(user.getNickname())
-                    .userProfileImagePath(user.getProfileImagePath()) // 추가
-                    .bandSession(participant.getName())
-                    .status(participant.getStatus())
-                    .createdAt(participant.getCreatedAt())
-                    .introduction(participant.getIntroduction())
-                    .build());
-        }
+        List<GatheringParticipantSummary> summaries = participants.stream()
+                .map(participant -> {
+                    User user = participant.getUser();
+                    return  GatheringParticipantSummary.builder()
+                            .participantId(participant.getId())
+                            .userId(user.getId())
+                            .userEmail(user.getEmail())
+                            .userNickname(user.getNickname())
+                            .userProfileImagePath(user.getProfileImagePath()) // 추가
+                            .bandSession(participant.getName())
+                            .status(participant.getStatus())
+                            .createdAt(participant.getCreatedAt())
+                            .introduction(participant.getIntroduction())
+                            .build();
+
+                })
+                .collect(Collectors.toList());
+
 
         // 3. 반환
         return GatheringParticipantListResponse.builder()
