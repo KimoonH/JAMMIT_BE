@@ -180,6 +180,7 @@ public class GatheringParticipationService {
     @Transactional
     public GatheringParticipationResponse approveParticipation(Long gatheringId, Long participantId) {
         User owner = AuthUtil.getUserInfo();
+
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
                 .orElseThrow(() -> new AlertException(GATHERING_NOT_FOUND));
@@ -187,59 +188,65 @@ public class GatheringParticipationService {
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
                 .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
 
-        // 2. 권한(주최자) 체크
+        validateApprovalRequest(gatheringId, owner, gathering, participant);
+
+        // 4. 정원 인원 체크
+        checkBandSessionCapacity(gathering, participant);
+
+        // 5. 승인 처리
+        participant.approve();
+
+        // 모집 인원수 증가 및 상태 변경
+        handleBandSessionCountIncrementAndStatusUpdate(participant, gathering);
+
+        return GatheringParticipationResponse.approved(
+                gatheringId
+                , owner.getId()
+                , participant.getName());
+    }
+
+    private void validateApprovalRequest(Long gatheringId, User owner, Gathering gathering, GatheringParticipant participant) {
+
+        // gatheringId 일치 확인
+        if(!participant.getGathering().getId().equals(gatheringId)) {
+            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+        }
+
+        // 주최자 권한 확인
         if(!gathering.getCreatedBy().equals(owner)) {
             throw new AlertException("승인 권한이 없습니다.");
         }
 
         // 3. 상태 검증
         if(participant.isApproved()) {
-            return GatheringParticipationResponse.fail("이미 승인된 참가자 입니다.");
+            throw new AlertException("이미 승인된 참가자입니다.");
         }
 
         if(participant.isCanceled()) {
-            return GatheringParticipationResponse.fail("이미 취소된 참가자 입니다.");
+            throw new AlertException("이미 취소된 참가자입니다.");
         }
-        
+
         if(participant.isRejected()) {
-            return GatheringParticipationResponse.fail("이미 거절된 참가자 입니다.");
+            throw new AlertException("이미 거절된 참가자입니다.");
         }
+    }
 
-        // 4. 정원 인원 체크
-        GatheringSession targetSession = gathering.getSession(participant.getName());
-
-        if(targetSession == null) {
-            throw new AlertException("밴드 세션 정보를 찾을 수 없습니다.");
-        }
-
+    private void checkBandSessionCapacity(Gathering gathering, GatheringParticipant participant) {
+        GatheringSession session = gathering.getSession(participant.getName());
         int approvedCount = gatheringParticipantRepository.countApproved(gathering, participant.getName());
 
-        if(approvedCount >= targetSession.getRecruitCount()) {
-            return GatheringParticipationResponse.fail("해당 세션의 모집 인원이 마감되었습니다.");
+        if (approvedCount >= session.getRecruitCount()) {
+            throw new AlertException("해당 세션의 모집 인원이 마감되었습니다.");
         }
+    }
 
-        // 5. 승인 처리
-        participant.approve();
-        targetSession.incrementCurrentCount();
-        
-        // 6. 모든 세션이 모집 완료되었는지 확인하고, 모임 상태 업데이트
-        boolean allSessionsFilled = true;
-        for (GatheringSession session : gathering.getGatheringSessions()) {
-            if (session.getCurrentCount() < session.getRecruitCount()) {
-                allSessionsFilled = false;
-                break;
-            }
-        }
-        
-        // 모든 세션이 채워졌다면 모집 완료 상태로 변경
-        if (allSessionsFilled) {
+    private void handleBandSessionCountIncrementAndStatusUpdate(GatheringParticipant participant, Gathering gathering) {
+        GatheringSession bandSession = gathering.getSession(participant.getName());
+        bandSession.incrementCurrentCount();
+
+        if(gathering.isAllBandSessionFilled()) {
             gathering.confirm();
         }
-
-        return GatheringParticipationResponse.approved(
-                gatheringId
-                , owner.getId()
-                , participant.getName());
     }
 
     /**

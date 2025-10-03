@@ -38,3 +38,6 @@ out/
 
 # YAML 파일 무시
 *.yml
+
+# Claude Code 설정 파일
+CLAUDE.md
