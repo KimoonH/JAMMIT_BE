@@ -8,6 +8,7 @@ import com.jammit_be.gathering.dto.request.GatheringUpdateRequest;
 import com.jammit_be.gathering.dto.response.GatheringCreateResponse;
 import com.jammit_be.gathering.dto.response.GatheringDetailResponse;
 import com.jammit_be.gathering.dto.response.GatheringListResponse;
+import com.jammit_be.gathering.service.GatheringOwnerService;
 import com.jammit_be.gathering.service.GatheringService;
 import com.jammit_be.gathering.service.GatheringParticipationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ public class GatheringController {
 
     private final GatheringService gatheringService;
     private final GatheringParticipationService gatheringParticipationService;
+    private final GatheringOwnerService gatheringOwnerService;
 
 
     @Operation(
@@ -172,7 +174,7 @@ public class GatheringController {
             @Parameter(description = "완료 처리할 모임 ID", example = "1")
             @PathVariable Long id
     ) {
-        gatheringParticipationService.completeGathering(id);
+        gatheringOwnerService.completeGathering(id);
         return CommonResponse.ok();
     }
 
