@@ -3,7 +3,6 @@ package com.jammit_be.gathering.service;
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.GatheringStatus;
-import com.jammit_be.common.enums.ParticipantStatus;
 import com.jammit_be.common.exception.AlertException;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.GatheringParticipantSummary;
@@ -24,12 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.jammit_be.gathering.constants.GatheringConstants.ErrorMessage.*;
@@ -381,18 +376,13 @@ public class GatheringParticipationService {
 
         Page<GatheringParticipant> participationsPage = gatheringParticipantRepository.findMyParticipations(user, pageable);
 
-        // 페이지 내용 처리
-        Set<Gathering> gatherings = new HashSet<>();
-        for (GatheringParticipant participation : participationsPage.getContent()) {
-            // 모임 상태 확인 (모임이 취소되었는데 includeCanceled가 false라면 제외)
-            Gathering gathering = participation.getGathering();
-            gatherings.add(gathering);
-        }
-
-        // Gathering을 GatheringSummary로 변환
-        List<GatheringSummary> summaries = gatherings.stream()
+        // 같은 모임에 여러 세션으로 신청한 경우 중복 제거
+        List<GatheringSummary> summaries = participationsPage.getContent().stream()
+                .map(participant -> participant.getGathering())
+                .distinct()
                 .map(GatheringSummary::of)
                 .collect(Collectors.toList());
+
 
         // 페이징 정보와 함께 응답 객체 생성
         return GatheringListResponse.builder()
