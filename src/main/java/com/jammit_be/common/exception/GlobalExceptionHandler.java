@@ -1,6 +1,9 @@
 package com.jammit_be.common.exception;
 
 import com.jammit_be.common.dto.CommonResponse;
+import com.jammit_be.gathering.exception.GatheringException;
+import com.jammit_be.gathering.exception.OwnerException;
+import com.jammit_be.gathering.exception.ParticipantException;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -81,4 +84,21 @@ public class GlobalExceptionHandler {
         return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
     }
 
+    @ExceptionHandler(GatheringException.class)
+    public CommonResponse<?> gatheringExceptionHandler(GatheringException e) {
+        log.warn("GatheringException", e);
+        return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
+    }
+
+    @ExceptionHandler(ParticipantException.class)
+    public CommonResponse<?> participantExceptionHandler(ParticipantException e) {
+        log.warn("ParticipantException", e);
+        return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
+    }
+
+    @ExceptionHandler(OwnerException.class)
+    public CommonResponse<?> ownerExceptionHandler(OwnerException e) {
+        log.warn("OwnerException", e);
+        return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
+    }
 }

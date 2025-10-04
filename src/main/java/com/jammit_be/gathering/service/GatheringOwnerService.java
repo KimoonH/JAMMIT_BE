@@ -2,7 +2,9 @@ package com.jammit_be.gathering.service;
 
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.GatheringStatus;
-import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.exception.GatheringException;
+import com.jammit_be.gathering.exception.ParticipantException;
+import com.jammit_be.gathering.exception.OwnerException;
 import com.jammit_be.gathering.dto.GatheringParticipantSummary;
 import com.jammit_be.gathering.dto.response.GatheringParticipantListResponse;
 import com.jammit_be.gathering.dto.response.GatheringParticipationResponse;
@@ -18,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.jammit_be.gathering.constants.GatheringConstants.ErrorMessage.GATHERING_NOT_FOUND;
 
 /**
  * 모임 주최자 관련 서비스
@@ -46,10 +46,10 @@ public class GatheringOwnerService {
 
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException(GATHERING_NOT_FOUND));
+                .orElseThrow(GatheringException.NotFound::new);
 
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
-                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
+                .orElseThrow(ParticipantException.NotFound::new);
 
         validateApprovalRequest(gatheringId, owner, gathering, participant);
 
@@ -72,25 +72,25 @@ public class GatheringOwnerService {
 
         // gatheringId 일치 확인
         if(!participant.getGathering().getId().equals(gatheringId)) {
-            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+            throw new ParticipantException.NotGatheringParticipant();
         }
 
         // 주최자 권한 확인
         if(!gathering.getCreatedBy().equals(owner)) {
-            throw new AlertException("승인 권한이 없습니다.");
+            throw new OwnerException.NoApprovalPermission();
         }
 
         // 상태 검증
         if(participant.isApproved()) {
-            throw new AlertException("이미 승인된 참가자입니다.");
+            throw new OwnerException.AlreadyApproved();
         }
 
         if(participant.isCanceled()) {
-            throw new AlertException("이미 취소된 참가자입니다.");
+            throw new OwnerException.AlreadyCanceled();
         }
 
         if(participant.isRejected()) {
-            throw new AlertException("이미 거절된 참가자입니다.");
+            throw new OwnerException.AlreadyRejected();
         }
     }
 
@@ -99,7 +99,7 @@ public class GatheringOwnerService {
         int approvedCount = gatheringParticipantRepository.countApproved(gathering, participant.getName());
 
         if (approvedCount >= session.getRecruitCount()) {
-            throw new AlertException("해당 세션의 모집 인원이 마감되었습니다.");
+            throw new OwnerException.SessionFull();
         }
     }
 
@@ -124,10 +124,10 @@ public class GatheringOwnerService {
 
         // 1. 모임 및 참가자 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
+                .orElseThrow(GatheringException.NotFound::new);
 
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
-                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
+                .orElseThrow(ParticipantException.NotFound::new);
 
         // 2. 검증
         validateRejectionRequest(gatheringId, owner, gathering, participant);
@@ -145,25 +145,25 @@ public class GatheringOwnerService {
     private void validateRejectionRequest(Long gatheringId, User owner, Gathering gathering, GatheringParticipant participant) {
         // gatheringId 일치 확인
         if (!participant.getGathering().getId().equals(gatheringId)) {
-            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+            throw new ParticipantException.NotGatheringParticipant();
         }
 
         // 주최자 권한 확인
         if (!gathering.getCreatedBy().equals(owner)) {
-            throw new AlertException("모임 주최자만 처리할 수 있습니다.");
+            throw new OwnerException.OnlyOwnerCanProcess();
         }
 
         // 상태 검증
         if (participant.isApproved()) {
-            throw new AlertException("이미 승인된 신청입니다.");
+            throw new OwnerException.AlreadyApprovedApplication();
         }
 
         if (participant.isCanceled()) {
-            throw new AlertException("이미 취소된 신청입니다.");
+            throw new OwnerException.AlreadyCanceledApplication();
         }
 
         if (participant.isRejected()) {
-            throw new AlertException("이미 거절된 신청입니다.");
+            throw new OwnerException.AlreadyRejectedApplication();
         }
     }
 
@@ -177,7 +177,7 @@ public class GatheringOwnerService {
 
         // 모임 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException("존재하지 않은 모임입니다."));
+                .orElseThrow(GatheringException.NotFound::new);
 
         validateCompletionRequest(owner, gathering);
 
@@ -188,12 +188,12 @@ public class GatheringOwnerService {
     private void validateCompletionRequest(User owner, Gathering gathering) {
         // 주최자 권한 확인
         if (!gathering.getCreatedBy().equals(owner)) {
-            throw new AlertException("모임 주최자만 완료 처리할 수 있습니다.");
+            throw new OwnerException.OnlyOwnerCanComplete();
         }
 
         // 모임 상태 확인
         if (gathering.getStatus() != GatheringStatus.CONFIRMED) {
-            throw new AlertException("멤버 모집이 완료된 모임만 완료 처리할 수 있습니다.");
+            throw new OwnerException.OnlyConfirmedCanComplete();
         }
     }
 

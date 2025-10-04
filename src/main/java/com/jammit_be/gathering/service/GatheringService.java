@@ -2,9 +2,8 @@ package com.jammit_be.gathering.service;
 
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
-import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.common.enums.Genre;
-import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.exception.GatheringException;
 import com.jammit_be.gathering.dto.CreatorInfo;
 import com.jammit_be.gathering.dto.GatheringSessionInfo;
 import com.jammit_be.gathering.dto.GatheringSummary;
@@ -110,7 +109,7 @@ public class GatheringService {
     public GatheringDetailResponse getGatheringDetail(Long gatheringId) {
         // 1. 모임 엔티티 + 밴드 세션 정보까지 한번에 조회
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException("모임이 존재하지 않습니다."));
+                .orElseThrow(GatheringException.NotFound::new);
 
         // 2. 밴드 세션 엔티티 리스트 → 세션 응답 DTO 리스트로 변환
         List<GatheringSessionInfo> sessionInfos = new ArrayList<>();
@@ -149,11 +148,11 @@ public class GatheringService {
         User user = AuthUtil.getUserInfo();
         // 1. 기존 모임 데이터 조회 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(id)
-                .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+                .orElseThrow( GatheringException.NotFound::new);
 
         // 작성자 권한 체크
         if(!gathering.getCreatedBy().equals(user)) {
-            throw new AlertException("수정 권한이 없습니다.");
+            throw new GatheringException.NoUpdatePermission();
         }
 
         // 3. 값 변경 (changeXXX 메서드 활용)
@@ -189,10 +188,10 @@ public class GatheringService {
     public void cancelGathering(Long id) {
         User user = AuthUtil.getUserInfo();
         Gathering gathering = gatheringRepository.findById(id)
-                .orElseThrow(() -> new AlertException("모임을 찾을 수 없습니다."));
+                .orElseThrow(GatheringException.NotFound::new);
 
         if (!gathering.getCreatedBy().equals(user)) {
-            throw new AlertException("취소 권한이 없습니다.");
+            throw new  GatheringException.NoCancelPermission();
         }
 
         // 실제 삭제 대신 상태를 취소로 변경

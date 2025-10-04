@@ -3,7 +3,8 @@ package com.jammit_be.gathering.service;
 import com.jammit_be.auth.util.AuthUtil;
 import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.GatheringStatus;
-import com.jammit_be.common.exception.AlertException;
+import com.jammit_be.gathering.exception.GatheringException;
+import com.jammit_be.gathering.exception.ParticipantException;
 import com.jammit_be.gathering.dto.GatheringSummary;
 import com.jammit_be.gathering.dto.request.GatheringParticipationRequest;
 import com.jammit_be.gathering.dto.response.CompletedGatheringResponse;
@@ -25,8 +26,6 @@ import java.util.List;
 
 import java.util.stream.Collectors;
 
-import static com.jammit_be.gathering.constants.GatheringConstants.ErrorMessage.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +46,7 @@ public class GatheringParticipationService {
 
         // 1. 모임 조회 및 존재 검증 (세션 정보 포함)
         Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
-                .orElseThrow(() -> new AlertException(GATHERING_NOT_FOUND));
+                .orElseThrow(GatheringException.NotFound::new);
 
         validateParticipation(user,gathering, request.getBandSession());
 
@@ -66,19 +65,19 @@ public class GatheringParticipationService {
     private void validateParticipation(User user, Gathering gathering, BandSession bandSession) {
         // 모임이 참가 가능한 상태인지 확인
         if (!gathering.isJoinable()) {
-            throw new AlertException(GATHERING_NOT_JOINABLE);
+            throw new GatheringException.NotJoinable();
         }
         // 중복 신청 체크
         boolean alreadyExists = gatheringParticipantRepository.existsActiveParticipation(user, gathering, bandSession);
         if (alreadyExists) {
-            throw new AlertException(ALREADY_APPLIED_FOR_SESSION);
+            throw new ParticipantException.AlreadyAppliedForSession();
         }
 
         // 정원 초과 체크
         GatheringSession session = gathering.getSession(bandSession);
         int approvedCount = gatheringParticipantRepository.countApproved(gathering, bandSession);
         if (approvedCount >= session.getRecruitCount()) {
-            throw new AlertException(SESSION_RECRUITMENT_FULL);
+            throw new ParticipantException.SessionRecruitmentFull();
         }
     }
 
@@ -96,7 +95,7 @@ public class GatheringParticipationService {
         User user = AuthUtil.getUserInfo();
         // 1. 참가 엔티티 조회
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
-                .orElseThrow(() -> new AlertException("해당 참가 신청이 없습니다."));
+                .orElseThrow(ParticipantException.NotFound::new);
 
         validateCancellation(gatheringId, user, participant);
 
@@ -145,22 +144,22 @@ public class GatheringParticipationService {
     private void validateCancellation(Long gatheringId ,User user, GatheringParticipant participant) {
         // 모임 일치 여부 확인 (첫 번째로 추가)
         if (!participant.getGathering().getId().equals(gatheringId)) {
-            throw new AlertException("해당 모임의 참가자가 아닙니다.");
+            throw new ParticipantException.NotGatheringParticipant();
         }
 
         // 본인 확인
         if (!participant.getUser().equals(user)) {
-            throw new AlertException("본인의 참가 신청만 취소할 수 있습니다.");
+            throw new ParticipantException.OnlySelfCanCancel();
         }
 
         // 이미 취소된 경우
         if (participant.isCanceled()) {
-            throw new AlertException("이미 취소된 참가 신청입니다.");
+            throw new ParticipantException.AlreadyCanceled();
         }
 
         // 이미 참여 완료된 경우
         if (participant.isCompleted()) {
-            throw new AlertException("이미 참여 완료된 모임은 취소할 수 없습니다.");
+            throw new ParticipantException.AlreadyCompleted();
         }
     }
 
