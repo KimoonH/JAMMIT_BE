@@ -3,10 +3,12 @@ package com.jammit_be.gathering.repository;
 import com.jammit_be.common.enums.GatheringStatus;
 import com.jammit_be.gathering.entity.Gathering;
 import com.jammit_be.user.entity.User;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,7 +23,23 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long> , Ga
     @EntityGraph(value = "Gathering.withSessionsAndUsers")
     @Query("select g from Gathering g where g.id = :id")
     Optional<Gathering> findByIdWithSessions(@Param("id") Long id);
-    
+
+    @EntityGraph(value = "Gathering.withSessionsUsersAndParticipants")
+    @Query("select g from Gathering g where g.id = :id")
+    Optional<Gathering> findByIdWithSessionsAndParticipants(@Param("id") Long id);
+
+    /**
+     * 비관적 락을 사용하여 모임과 세션 정보를 조회합니다.
+     * 동시성 제어가 필요한 작업(승인, 거절 등)에서 사용합니다.
+     *
+     * @param id 모임 ID
+     * @return 비관적 락이 걸린 모임 엔티티
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(value = "Gathering.withSessionsAndUsers")
+    @Query("select g from Gathering g where g.id = :id")
+    Optional<Gathering> findByIdWithLock(@Param("id") Long id);
+
     /**
      * 사용자가 생성한 모임 목록 조회 (취소 포함 여부에 따라 필터링)
      * @param createdBy 모임 생성자

@@ -4,11 +4,15 @@ import com.jammit_be.common.enums.BandSession;
 import com.jammit_be.common.enums.Genre;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
 
 @Getter
+@AllArgsConstructor
+@Builder
 @Schema(description = "사용자 정보 수정 요청")
 public class UpdateUserRequest {
 

@@ -45,7 +45,7 @@ public class GatheringOwnerService {
         User owner = AuthUtil.getUserInfo();
 
         // 1. 모임 및 참가자 조회
-        Gathering gathering = gatheringRepository.findByIdWithSessions(gatheringId)
+        Gathering gathering = gatheringRepository.findByIdWithLock(gatheringId)
                 .orElseThrow(GatheringException.NotFound::new);
 
         GatheringParticipant participant = gatheringParticipantRepository.findById(participantId)
@@ -181,8 +181,16 @@ public class GatheringOwnerService {
 
         validateCompletionRequest(owner, gathering);
 
-        // 모임 완료 처리 (참가자도 함께 참여 완료 상태로 변경됨)
+        // 모임 완료 처리
         gathering.complete();
+
+        // 승인된 참가자들을 참여 완료 상태로 변경
+        List<GatheringParticipant> approvedParticipants = gatheringParticipantRepository.findByGatheringId(gatheringId);
+        for (GatheringParticipant participant : approvedParticipants) {
+            if (participant.isApproved()) {
+                participant.complete();
+            }
+        }
     }
 
     private void validateCompletionRequest(User owner, Gathering gathering) {

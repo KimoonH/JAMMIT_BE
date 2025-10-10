@@ -66,7 +66,6 @@ public class GatheringService {
         GatheringParticipant hostParticipant = GatheringParticipant.createHostParticipant(user, saved);
         gatheringParticipantRepository.save(hostParticipant);
 
-
         return GatheringCreateResponse.from(saved);
     }
 

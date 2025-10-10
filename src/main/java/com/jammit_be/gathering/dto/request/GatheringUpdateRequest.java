@@ -3,10 +3,7 @@ package com.jammit_be.gathering.dto.request;
 import com.jammit_be.common.enums.Genre;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +13,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class GatheringUpdateRequest {
 
     @Schema(description = "모임 이름", example = "홍대 락밴드 모임")

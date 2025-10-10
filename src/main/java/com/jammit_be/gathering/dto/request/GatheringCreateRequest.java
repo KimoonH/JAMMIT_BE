@@ -14,6 +14,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class GatheringCreateRequest {
 
     @Schema(description = "모임 이름", example = "무한동력")

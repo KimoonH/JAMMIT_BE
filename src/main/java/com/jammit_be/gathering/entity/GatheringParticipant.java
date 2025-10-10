@@ -40,7 +40,7 @@ public class GatheringParticipant extends BaseEntity {
     private Gathering gathering;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "band_session_name", nullable = false)
+    @Column(name = "band_session_name")
     private BandSession name;
     
     @Enumerated(EnumType.STRING)

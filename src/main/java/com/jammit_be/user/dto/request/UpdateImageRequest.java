@@ -1,9 +1,13 @@
 package com.jammit_be.user.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
+@Builder
 public class UpdateImageRequest {
 
     @Schema(description = "사용자의 유저 프로필 이미지 파일 원본 이름", example = "증명사진.jpg", nullable = false)

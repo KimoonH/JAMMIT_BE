@@ -37,6 +37,15 @@ import java.util.Set;
             @NamedAttributeNode("createdBy"),
             @NamedAttributeNode("updatedBy")
         }
+    ),
+    @NamedEntityGraph(
+        name = "Gathering.withSessionsUsersAndParticipants",
+        attributeNodes = {
+            @NamedAttributeNode("gatheringSessions"),
+            @NamedAttributeNode("createdBy"),
+            @NamedAttributeNode("updatedBy"),
+            @NamedAttributeNode("participants")
+        }
     )
 })
 public class Gathering extends BaseUserEntity {
@@ -164,13 +173,6 @@ public class Gathering extends BaseUserEntity {
     public void complete() {
         if (this.status == GatheringStatus.CONFIRMED) {
             this.status = GatheringStatus.COMPLETED;
-            
-            // 모든 승인된 참가자를 참여 완료 상태로 변경
-            for (GatheringParticipant participant : this.participants) {
-                if (participant.isApproved()) {
-                    participant.complete();
-                }
-            }
         }
     }
 
