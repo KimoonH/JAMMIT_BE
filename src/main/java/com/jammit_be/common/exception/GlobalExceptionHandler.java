@@ -84,16 +84,80 @@ public class GlobalExceptionHandler {
         return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
     }
 
+    @ExceptionHandler(GatheringException.NotFound.class)
+    public CommonResponse<?> gatheringNotFoundHandler(GatheringException.NotFound e) {
+        log.warn("GatheringException.NotFound", e);
+        return new CommonResponse<>().fail(NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler({
+            GatheringException.NoUpdatePermission.class,
+            GatheringException.NoCancelPermission.class
+    })
+    public CommonResponse<?> gatheringPermissionHandler(GatheringException e) {
+        log.warn("GatheringException.Permission", e);
+        return new CommonResponse<>().fail(FORBIDDEN, e.getMessage());
+    }
+
     @ExceptionHandler(GatheringException.class)
     public CommonResponse<?> gatheringExceptionHandler(GatheringException e) {
         log.warn("GatheringException", e);
         return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
     }
 
+    @ExceptionHandler(ParticipantException.NotFound.class)
+    public CommonResponse<?> participantNotFoundHandler(ParticipantException.NotFound e) {
+        log.warn("ParticipantException.NotFound", e);
+        return new CommonResponse<>().fail(NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(ParticipantException.OnlySelfCanCancel.class)
+    public CommonResponse<?> participantPermissionHandler(ParticipantException.OnlySelfCanCancel e) {
+        log.warn("ParticipantException.Permission", e);
+        return new CommonResponse<>().fail(FORBIDDEN, e.getMessage());
+    }
+
+    @ExceptionHandler({
+            ParticipantException.AlreadyCanceled.class,
+            ParticipantException.AlreadyCompleted.class,
+            ParticipantException.AlreadyAppliedForSession.class,
+            ParticipantException.SessionRecruitmentFull.class
+    })
+    public CommonResponse<?> participantConflictHandler(ParticipantException e) {
+        log.warn("ParticipantException.Conflict", e);
+        return new CommonResponse<>().fail(CONFLICT, e.getMessage());
+    }
+
     @ExceptionHandler(ParticipantException.class)
     public CommonResponse<?> participantExceptionHandler(ParticipantException e) {
         log.warn("ParticipantException", e);
         return new CommonResponse<>().fail(CLIENT_FAIL_CODE, e.getMessage());
+    }
+    
+
+    @ExceptionHandler({
+            OwnerException.NoApprovalPermission.class,
+            OwnerException.OnlyOwnerCanProcess.class,
+            OwnerException.OnlyOwnerCanComplete.class
+    })
+    public CommonResponse<?> ownerPermissionHandler(OwnerException e) {
+        log.warn("OwnerException.Permission", e);
+        return new CommonResponse<>().fail(FORBIDDEN, e.getMessage());
+    }
+
+    @ExceptionHandler({
+            OwnerException.AlreadyApproved.class,
+            OwnerException.AlreadyCanceled.class,
+            OwnerException.AlreadyRejected.class,
+            OwnerException.SessionFull.class,
+            OwnerException.AlreadyApprovedApplication.class,
+            OwnerException.AlreadyCanceledApplication.class,
+            OwnerException.AlreadyRejectedApplication.class,
+            OwnerException.OnlyConfirmedCanComplete.class
+    })
+    public CommonResponse<?> ownerConflictHandler(OwnerException e) {
+        log.warn("OwnerException.Conflict", e);
+        return new CommonResponse<>().fail(CONFLICT, e.getMessage());
     }
 
     @ExceptionHandler(OwnerException.class)

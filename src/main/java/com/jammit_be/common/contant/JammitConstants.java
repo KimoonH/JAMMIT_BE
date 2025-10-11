@@ -8,6 +8,9 @@ public class JammitConstants {
     public static final Integer SERVER_FAIL_CODE = 500;
     public static final Integer CLIENT_FAIL_CODE = 400;
     public static final Integer UNAUTHORIZED = 401;
+    public static final Integer FORBIDDEN = 403;
+    public static final Integer NOT_FOUND = 404;
+    public static final Integer CONFLICT = 409;
     public static final String SUCCESS_MESSAGE = "성공";
   }
 
